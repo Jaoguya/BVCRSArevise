@@ -1,0 +1,3785 @@
+\documentclass[lettersize,journal]{IEEEtran}
+
+% ---- Unicode sanitization ----
+\DeclareUnicodeCharacter{202A}{}
+\DeclareUnicodeCharacter{202C}{}
+\DeclareUnicodeCharacter{200E}{}
+\DeclareUnicodeCharacter{200F}{}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\graphicspath{{all_figures/}}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{cite}
+\usepackage{xspace}
+\usepackage{url}
+\usepackage{placeins}
+\usepackage{amsthm}
+\usepackage{pifont}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\newcommand{\ABSE}{ABSE\xspace}
+\newcommand{\AHE}{AHE\xspace}
+\newcommand{\IIoT}{IIoT\xspace}
+\newcommand{\PKAHE}{PK_{\mathrm{AHE}}}
+\newcommand{\SKAHE}{SK_{\mathrm{AHE}}}
+\newcommand{\CTAHE}{CT_{\mathrm{AHE}}}
+\newcommand{\CTABSE}{CT_{\mathrm{ABSE}}}
+\newcommand{\params}{\mathit{params}}
+\newcommand{\Setup}{\mathsf{Setup}}
+\newcommand{\EncECElGamal}{\mathsf{Enc}_{\mathrm{EC\text{-}ElGamal}}}
+\newcommand{\EncABS}{\mathsf{Enc}_{\mathrm{ABSE}}}
+\newcommand{\Hash}{\mathsf{H}_1}
+\newcommand{\TokenGen}{\mathsf{TokenGen}}
+\newcommand{\bbG}{\mathbb{G}}
+\newcommand{\bbGT}{\mathbb{G}_T}
+
+\title{BVCRSA: Blockchain-Based Verifiable Conjunctive Range Search and Aggregation over Encrypted IIoT Data}
+
+\author{Natthawat Tungsriworakan, Paphavin Patrick Smith, Kristrin Malaiwong, 
+Tagrid Chongkolrattanapond, and Somchart Fugkeaw%
+\thanks{Natthawat Tungsriworakan, Paphavin Patrick Smith, Kristrin Malaiwong, 
+Tagrid Chongkolrattanapond, and Somchart Fugkeaw are with the Sirindhorn 
+International Institute of Technology, Thammasat University, Thailand 
+(e-mail: 6622772364@g.siit.tu.ac.th; 6622780029@g.siit.tu.ac.th; 
+6622781175@g.siit.tu.ac.th; 6622770376@g.siit.tu.ac.th; 
+somchart@siit.tu.ac.th).}%
+\thanks{Corresponding author: Somchart Fugkeaw.}
+}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+Privacy-preserving range queries over encrypted Industrial
+Internet of Things (IIoT) data have been widely studied;
+however, existing schemes primarily focus on secure retrieval
+and provide limited support for conjunctive multi-range
+search, encrypted aggregation, and verifiable result
+validation. In practical IIoT environments, operators require
+multi-dimensional range queries together with authenticated
+statistical analytics over outsourced encrypted sensor data.
+To address these challenges, we propose
+\emph{Blockchain-based Verifiable Conjunctive Range Search
+and Aggregation (BVCRSA)}, a unified framework for secure
+and verifiable analytics over encrypted IIoT data. BVCRSA
+organizes encrypted records using an authenticated
+hierarchical range-cover index that combines logarithmic
+canonical interval decomposition with protected bitmap
+filtering and cross-dimensional intersection for scalable
+conjunctive range evaluation. The framework integrates
+attribute-based searchable encryption with Threshold
+EC-ElGamal homomorphic aggregation, enabling fine-grained
+access control and direct encrypted computation over matched
+records without granting users an aggregation private key.
+BVCRSA further introduces blockchain-anchored query-state
+verification that combines Merkle-authenticated search
+structures, bitmap commitments, and authenticated batch
+commitments to provide authenticated query-state integrity,
+completeness, freshness, and rollback resistance without
+zero-knowledge proofs or trusted hardware. Experimental
+results demonstrate efficient trapdoor generation,
+practical bitmap-based query processing, low verification
+overhead, and substantial aggregation benefits compared
+with representative searchable range-query schemes on
+their common functionalities.
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+IIoT, ABSE, Range Query, Conjunctive query, Data Aggregation, Edge Computing, Bitmap index, Blockchain.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+With the rapid development of IIoT technology, massive volumes of sensor data are
+continuously generated across smart manufacturing, industrial
+automation, and critical infrastructure environments~\cite{ref1,ref2}.
+To reduce storage and operational costs, organizations commonly
+outsource these data to cloud platforms. However, cloud servers
+are generally considered semi-honest entities that may attempt
+to infer sensitive operational information from outsourced
+data~\cite{ref3,ref4}. Consequently, IIoT data must be encrypted
+before outsourcing. Unfortunately, conventional encryption
+significantly complicates efficient retrieval and analytics over
+encrypted numerical sensor data.
+
+Searchable encryption (SE) enables users to retrieve encrypted
+data without revealing plaintext information to the cloud
+server~\cite{ref3,ref4}. Existing searchable encryption and
+attribute-based searchable encryption (ABSE)
+schemes~\cite{ref5,ref8,ref11} mainly focus on keyword
+retrieval and are not well suited for IIoT environments,
+where queries often involve numerical conditions and
+real-time analytics. Recent studies have improved verifiable
+search~\cite{ref7,ref10,ref43,ref44,ref45},
+search-pattern privacy~\cite{ref21}, dynamic access control
+and update privacy~\cite{ref23,ref25}, and privacy-preserving
+trapdoor generation~\cite{ref23}. However, most remain
+keyword-oriented and do not efficiently support conjunctive
+numerical range queries with encrypted aggregation.
+
+In practical IIoT environments, operators frequently issue
+conjunctive multi-range queries over multiple sensor
+attributes while simultaneously performing statistical
+analysis on the matched records. For example, a factory
+operator may search for records satisfying
+
+\[
+\begin{aligned}
+\mathrm{Temperature} &\in [60^\circ\mathrm{C},80^\circ\mathrm{C}] \\
+\land\;\mathrm{Vibration} &\in [10,20] \\
+\land\;\mathrm{Pressure} &\in [40,55].
+\end{aligned}
+\]
+
+while computing the sum, count, or average of the matched
+sensor readings. Supporting such \emph{conjunctive range
+search} and \emph{secure aggregation} directly over encrypted
+IIoT data remains challenging.
+
+First, existing range-query schemes primarily focus on secure
+retrieval. Approaches in~\cite{ref19,ref25,ref30} improve
+encrypted search, while learned-index schemes~\cite{ref43},
+Volume-Hiding SSE~\cite{ref36}, Revocable
+DSSE~\cite{ref37}, Scheme~\cite{ref38}, and
+Trinity~\cite{ref39} enhance query efficiency, privacy, and
+scalability. ABSE-Range~\cite{ref40} and lattice-based
+searchable encryption~\cite{ref41} further introduce
+attribute-based and post-quantum range-query support.
+Nevertheless, these schemes do not jointly support
+conjunctive range search and encrypted aggregation.
+
+Second, searchable encryption and encrypted analytics are
+typically treated as separate components. Recent
+schemes~\cite{ref7,ref12,ref21,ref23,ref25,ref43,ref44,ref45}
+combine searchable encryption with homomorphic computation,
+query privacy, access control, and verifiable search.
+However, aggregation is usually performed outside the search
+structure, introducing additional computation and
+communication overhead.
+
+Third, existing verifiable searchable encryption schemes
+mainly focus on retrieval correctness and rarely verify both
+conjunctive range search and aggregation results. A
+malicious cloud may omit valid records, forge results,
+manipulate aggregates, or replay stale query states.
+Although blockchain-assisted approaches exist, most rely on
+simple timestamping or Merkle-root anchoring and do not
+authenticate searchable indexes, aggregation metadata, and
+query results in a unified manner. Consequently, ensuring
+search correctness, aggregation integrity, freshness, and
+rollback resistance remains an open challenge for large-scale
+outsourced IIoT environments.
+
+To address these limitations, we propose
+\emph{Blockchain-based Verifiable Conjunctive Range Search
+and Aggregation (BVCRSA)}, a blockchain-anchored framework
+for secure and verifiable conjunctive multi-range queries
+over encrypted IIoT data. BVCRSA combines authenticated
+hierarchical range-cover structures, protected bitmap
+filtering, and cross-dimensional bitmap intersection to
+enable efficient canonical-node discovery and conjunctive
+range evaluation. It further integrates ABSE with Threshold
+EC-ElGamal homomorphic encryption to provide fine-grained
+access control and direct aggregation over matched encrypted
+records. An epoch-bound blockchain verification mechanism
+based on authenticated Merkle proofs and compact aggregation
+commitments ensures correctness, integrity, freshness, and
+rollback resistance without relying on zero-knowledge proofs
+or trusted hardware. The main contributions of this paper are summarized as
+follows:
+
+\begin{itemize}
+
+\item We propose \textbf{BVCRSA}, a unified framework for
+verifiable conjunctive range search and encrypted analytics
+over outsourced IIoT data. Unlike existing schemes that
+treat searchable encryption, aggregation, and verification
+independently, BVCRSA jointly realizes secure
+multi-dimensional range search, privacy-preserving
+aggregation, fine-grained access control, and authenticated
+query-state verification within a single architecture.
+
+\item We design an \textbf{authenticated hierarchical
+range-cover indexing mechanism} that transforms
+multi-dimensional range queries into compact canonical
+interval representations. Combined with protected bitmap
+filtering and cross-dimensional bitmap intersection, the
+proposed mechanism enables logarithmic searchable-node
+lookup and efficient conjunctive query evaluation over
+encrypted numerical sensor data.
+
+\item We develop a \textbf{bitmap-aware encrypted
+aggregation mechanism} that tightly couples searchable
+indexing with homomorphic aggregation, enabling direct
+computation of sum, count, and average statistics over
+query-matched encrypted IIoT records under fine-grained
+authorization. The proposed design eliminates separate
+aggregation processing while ensuring that no single entity
+can decrypt the aggregation results.
+
+\item We introduce a \textbf{Verifiable Query-State
+Anchoring (VQSA)} mechanism that authenticates searchable
+index states, bitmap commitments, and aggregation metadata
+through compact blockchain-anchored commitments. By
+combining blockchain finality with Merkle-based
+verification, VQSA provides authenticated query-state
+integrity, authenticated completeness, freshness, rollback
+resistance, and cryptographic binding between aggregation
+ciphertexts and the verified matched record set, without
+requiring zero-knowledge proofs, cryptographic
+accumulators, or trusted hardware.
+
+\end{itemize}
+
+The rest of this paper is organized as follows.
+Section~II reviews related work.
+Section~III presents the proposed BVCRSA framework.
+Section~IV provides formal security analysis.
+Section~V evaluates the performance of the proposed scheme.
+Finally, Section~VI concludes the paper.
+
+
+
+\section{Related Work}
+\label{sec:related}
+
+\begin{table*}[t]
+\centering
+\caption{Comparison of Representative Searchable Encryption Schemes}
+\label{tab:feature_comparison}
+\renewcommand{\arraystretch}{1.15}
+\footnotesize
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Scheme}
+&
+\textbf{Conjunctive}
+&
+\textbf{Range}
+&
+\textbf{Fine-Grained}
+&
+\textbf{Encrypted}
+&
+\textbf{Verifiable}
+\\
+&
+\textbf{Search}
+&
+\textbf{Query}
+&
+\textbf{Access Control}
+&
+\textbf{Aggregation}
+&
+\textbf{Results}
+\\
+\midrule
+
+
+Scheme~\cite{ref7}
+& \cmark & \xmark & \xmark & \cmark & \cmark \\
+
+Scheme~\cite{ref12}
+& \xmark & \xmark & \xmark & \cmark & \xmark \\
+
+Scheme~\cite{ref36}
+& \xmark & \cmark & \xmark & \xmark & \xmark \\
+
+Scheme~\cite{ref37}
+& \xmark & \cmark & \xmark & \xmark & \xmark \\
+
+Scheme~\cite{ref38}
+& \cmark & \cmark & \xmark & \xmark & \xmark \\
+
+Scheme~\cite{ref39}
+& \xmark & \cmark & \xmark & \xmark & \xmark \\
+
+Scheme~\cite{ref40}
+& \xmark & \cmark & \cmark & \xmark & \xmark \\
+Scheme~\cite{ref41}
+& \cmark & \cmark & \xmark & \xmark & \xmark \\
+Scheme~\cite{ref44}
+& \cmark & \xmark & \xmark & \xmark & \cmark \\
+
+Scheme~\cite{ref45}
+& \cmark & \cmark & \cmark & \xmark & \cmark \\
+
+\textbf{BVCRSA (Ours)}
+& \cmark & \cmark & \cmark & \cmark & \cmark \\
+\bottomrule
+\end{tabular}
+\end{table*}
+\subsection{Verifiable Searchable Encryption and Attribute-Based Search}
+
+Verifiable searchable encryption (VSE) enables users to
+validate the correctness and integrity of outsourced
+encrypted search results, while attribute-based searchable
+encryption (ABSE) provides fine-grained access control over
+encrypted data. Early ABSE schemes~\cite{ref8} introduced
+attribute-constrained search, and subsequent studies
+extended the paradigm with hierarchical
+search~\cite{ref9}, hidden access
+policies~\cite{ref15}, multi-keyword
+search~\cite{ref5,ref6,ref11},
+blockchain-assisted auditability~\cite{ref17,ref18},
+wildcard and revocable
+search~\cite{ref16,ref20}, and resistance to
+keyword-guessing and leakage
+attacks~\cite{ref31,ref32,ref33}. These schemes
+significantly improve search privacy and authorization but
+remain primarily designed for keyword retrieval rather than
+numerical range queries.
+
+Recent VSE schemes~\cite{ref7,ref10,ref43,ref44,ref45}
+further strengthen authenticated query verification,
+authorization-aware delegation, provenance validation, and
+blockchain-assisted integrity protection. For example,
+LV-PQ-ABSE~\cite{ref45} combines post-quantum
+attribute-based searchable encryption with provenance-aware
+verification for IoT-enabled EHR systems. Nevertheless,
+these schemes remain keyword-oriented and generally do not
+support conjunctive multi-dimensional range search or
+privacy-preserving aggregation. Dynamic searchable
+encryption~\cite{ref23,ref25} further improves update
+privacy, data deduplication, and conjunctive keyword search,
+while search-pattern hiding and privacy-preserving trapdoor
+generation~\cite{ref21,ref23} reduce query leakage.
+However, efficient authenticated numerical analytics remain
+largely unexplored.
+
+\subsection{Privacy-Preserving Range Query}
+
+Privacy-preserving range-query processing has been widely
+studied for encrypted databases and IoT systems.
+Order-preserving and order-revealing
+encryption~\cite{ref29} support efficient ciphertext
+comparison but inherently leak ordering information.
+Existing encrypted range-query
+schemes~\cite{ref19,ref25,ref30} improve secure retrieval
+for numerical and spatial data but provide only limited
+support for conjunctive multi-dimensional queries and do
+not incorporate encrypted analytics. Learned-index
+approaches~\cite{ref43} further improve retrieval
+efficiency but primarily optimize indexing performance
+rather than integrating access control, aggregation, or
+authenticated verification.
+
+Several studies focus on improving the scalability of
+encrypted range search. Volume-Hiding
+SSE~\cite{ref36} reduces information leakage during
+retrieval, Revocable DSSE~\cite{ref37} supports dynamic
+healthcare-oriented search, Scheme~\cite{ref38} enables
+efficient multidimensional range queries, and
+Trinity~\cite{ref39} introduces forward-secure
+spatio-temporal search using SHVE and quotient filters.
+Although these schemes improve search efficiency and query
+expressiveness, they generally treat retrieval as an
+independent task and do not provide integrated encrypted
+aggregation or authenticated result verification.
+
+Recent efforts have combined range queries with
+attribute-based and post-quantum searchable encryption.
+ABSE-Range~\cite{ref40} supports numerical range queries
+under attribute-based authorization but incurs increasing
+trapdoor complexity as the query range expands.
+Lattice-based searchable
+encryption~\cite{ref41} provides post-quantum security
+under LWE assumptions but introduces substantially higher
+computational overhead due to expensive lattice
+operations, limiting practicality for resource-constrained
+IIoT deployments.
+
+\subsection{Searchable Encryption with Privacy-Preserving Aggregation}
+
+Homomorphic encryption enables computations to be performed
+directly over encrypted data and has recently been combined
+with searchable encryption to support secure cloud
+analytics. The verifiable searchable encryption
+framework~\cite{ref7} integrates partial homomorphic
+encryption, B$+$-Tree indexing, bitmap filtering, and
+blockchain-assisted verification for Boolean search.
+SEaaS~\cite{ref12} combines searchable encryption with
+homomorphic computation for encrypted analytics, while
+other studies~\cite{ref21,ref23,ref25} improve query
+privacy, update privacy, and multi-user searchable
+encryption.
+
+Despite these advances, existing solutions generally
+optimize one aspect of the problem---search efficiency,
+encrypted analytics, or verifiable query
+processing---without jointly addressing all requirements of
+large-scale IIoT data analytics. In particular, encrypted
+aggregation is typically performed independently of the
+search process, introducing additional computation,
+communication, and post-processing overhead. Furthermore,
+authenticated verification mechanisms mainly focus on
+retrieval correctness rather than simultaneously ensuring
+search correctness, aggregation integrity, completeness,
+freshness, and rollback resistance.
+
+Table~\ref{tab:feature_comparison} summarizes the
+functional capabilities of representative searchable
+encryption schemes. Verifiable searchable encryption
+schemes~\cite{ref7,ref44,ref45} provide authenticated
+search and integrity validation, but
+Refs.~\cite{ref7,ref44} do not support numerical range
+queries, while Ref.~\cite{ref45} lacks encrypted
+aggregation. Range-query
+schemes~\cite{ref36,ref37,ref38,ref39,ref40,ref41}
+improve retrieval efficiency and query expressiveness but
+generally omit authenticated verification and integrated
+encrypted aggregation. Conversely,
+SEaaS~\cite{ref12} supports encrypted aggregation but does
+not provide conjunctive range search, fine-grained
+attribute-based access control, or verifiable query
+processing.
+
+In contrast, BVCRSA integrates authenticated hierarchical
+range-cover indexing, conjunctive bitmap filtering,
+attribute-based searchable encryption, Threshold
+EC-ElGamal homomorphic aggregation, and blockchain-anchored
+query-state verification within a unified framework. This
+integration enables efficient conjunctive multi-range
+search together with fine-grained access control,
+privacy-preserving aggregation, authenticated query-state
+integrity, completeness, freshness, and rollback
+resistance, thereby addressing the limitations of existing
+searchable encryption schemes for large-scale IIoT
+analytics.
+
+
+\section{Our Proposed Scheme}
+\subsection{System Model}
+\label{subsec:system_model}
+
+The proposed BVCRSA architecture consists of seven entities,
+as illustrated in Fig.~\ref{fig:system_model}. The system
+supports privacy-preserving conjunctive range search,
+encrypted aggregation, threshold-secure aggregate
+decryption, and blockchain-anchored result verification over
+outsourced IIoT data. Unlike conventional designs that
+require sensor data to be decrypted at an intermediate edge
+node, BVCRSA performs encryption directly at the sensor. Each
+sensor locally derives the canonical-node identifiers
+required for indexing and transmits them as authenticated
+metadata. The Edge Gateway constructs the authenticated
+searchable index from this metadata without decrypting the
+sensor record or aggregation ciphertext.
+
+\begin{enumerate}
+
+\item \textbf{IIoT Sensor Nodes.}
+Resource-constrained devices continuously collect industrial
+measurements and generate sensor records. Before
+outsourcing, each sensor derives authenticated indexing
+metadata, encrypts the complete record using AES-GCM,
+encrypts the numerical value using Threshold EC-ElGamal for
+privacy-preserving aggregation, and generates authentication
+tags to ensure data integrity and freshness.
+
+\item \textbf{Edge Gateway.}
+The Edge Gateway is an honest-but-curious entity
+responsible for verifying sensor authenticity,
+constructing the authenticated range-cover index,
+generating protected bitmap structures, maintaining
+aggregation metadata, and producing blockchain-bound
+authenticated commitments. It is trusted to correctly
+generate these authenticated states but may attempt to
+infer information from encrypted records and indexing
+metadata. The gateway does not possess any threshold
+decryption share or attribute secret key and therefore
+cannot decrypt encrypted sensor records or aggregation
+ciphertexts.
+
+
+\item \textbf{Cloud Server.}
+The Cloud Server faithfully executes storage, search, and
+aggregation protocols but is curious about the outsourced
+data and queries. In addition, the framework considers
+active attacks in which a compromised or malicious cloud
+attempts to omit, modify, replay, or fabricate query
+results. Such attacks are detected through blockchain-based
+query-state verification, authenticated batch commitments,
+and Merkle-proof validation.
+
+\item \textbf{Blockchain Network.}
+The blockchain acts as an immutable commitment layer that
+stores authenticated query-state commitments generated by
+the Edge Gateway. It provides integrity protection,
+freshness validation, and rollback resistance without
+storing encrypted sensor records or searchable indexes
+on-chain.
+
+\item \textbf{Data User.}
+Authorized users generate query trapdoors using their
+attribute secret keys, submit encrypted conjunctive range
+queries to the cloud, verify the returned authenticated
+query response against the blockchain commitments, and
+request threshold decryption of the authenticated aggregate
+ciphertexts. Users do not possess any threshold decryption
+share and therefore cannot decrypt individual aggregation
+ciphertexts independently.
+
+\item \textbf{Threshold Decryption Authorities (TDAs).}
+The TDAs are independent and non-colluding entities that
+collectively perform threshold EC-ElGamal decryption of
+authenticated aggregate ciphertexts. Each TDA stores a
+single secret decryption share and generates a partial
+decryption only after the corresponding authenticated query
+response has been successfully verified. Aggregate
+ciphertexts are recovered only through the cooperation of
+at least \(t\) out of \(n\) TDAs, while fewer than \(t\)
+shares reveal no information about the underlying
+decryption key.
+
+\item \textbf{Trusted Authority (TA).}
+The TA is assumed to be fully trusted during system
+initialization and serves as the root of trust for the
+proposed framework. It generates the global public
+parameters, issues attribute-based secret keys,
+initializes the Threshold EC-ElGamal cryptosystem,
+constructs and distributes threshold decryption shares to
+the TDAs, provisions cryptographic credentials to sensors,
+users, and the Edge Gateway, and publishes the authenticated
+public parameters required for encryption, authentication,
+aggregation, threshold decryption, and verification. After
+system setup, the TA does not participate in searchable
+query processing, encrypted aggregation, or result
+verification.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{modelAHE.png}
+\caption{BVCRSA System Model.}
+\label{fig:system_model}
+\end{figure}
+
+\subsection{Threat Model}
+
+We consider probabilistic polynomial-time (PPT)
+adversaries that attempt to infer sensor values, recover
+query semantics, violate access policies, manipulate
+aggregation results, or tamper with authenticated query
+states.
+
+\subsubsection{Honest-but-Curious Edge Gateway}
+
+The Edge Gateway faithfully executes sensor
+authentication, authenticated index construction,
+aggregation-metadata generation, and blockchain commitment
+generation, but may attempt to infer information from
+encrypted records and authenticated indexing metadata. In
+particular, it may observe the searchable dimensions and
+canonical-node memberships contained in \(Meta_i\), but
+does not learn the exact numerical sensor values.
+Moreover, it possesses neither the ABSE master secret,
+attribute secret keys, nor any threshold decryption share,
+and therefore cannot decrypt sensor records or aggregation
+ciphertexts. The authenticated query state generated by the
+Edge Gateway is subsequently anchored on the blockchain,
+allowing any unauthorized modification to be detected
+during query-state verification.
+\subsubsection{Honest-but-Curious Cloud Server}
+
+The cloud is assumed to be honest-but-curious during
+normal protocol execution, faithfully performing
+searchable query processing, bitmap filtering, and
+homomorphic aggregation while attempting to infer
+information from encrypted records, trapdoors, protected
+bitmaps, and the leakage specified by
+\(\mathcal{L}_{BVCRSA}\). Separately, in the security
+analysis, we consider protocol deviations in which the
+cloud attempts to omit, modify, replay, or fabricate query
+responses. These malicious behaviors are detected through
+blockchain-anchored query states, authenticated batch
+commitments, and Merkle-proof verification. Furthermore,
+the cloud cannot decrypt encrypted data, generate
+unauthorized trapdoors, or forge authenticated query
+states without detection.
+\subsubsection{Unauthorized Users and Threshold Decryption Authorities}
+
+Unauthorized users may attempt to generate valid
+trapdoors, bypass access policies, or collude with the
+cloud. Aggregate ciphertexts are protected using
+Threshold EC-ElGamal, where each Threshold Decryption
+Authority (TDA) stores only one secret decryption share.
+We assume fewer than \(t\) out of \(n\) TDAs are
+compromised. Consequently, no coalition of the cloud,
+users, and fewer than \(t\) TDAs can decrypt individual
+ciphertexts or recover the aggregation private key.
+
+\subsubsection{Blockchain and Network Attacks}
+
+Adversaries may attempt rollback, replay, omission,
+message tampering, or aggregation-result forgery.
+Blockchain-anchored authenticated commitments, Merkle
+proofs, authenticated batch commitments, AES-GCM, and
+randomized ABSE trapdoors prevent such attacks while
+providing integrity, freshness, and authenticated query
+verification.
+
+\subsubsection{Assumptions}
+
+The Trusted Authority is fully trusted for system
+initialization and credential distribution. The underlying
+cryptographic primitives, Threshold EC-ElGamal scheme, and
+blockchain consensus protocol are assumed to be secure.
+Physical attacks, denial-of-service attacks, side-channel
+attacks, and collusion among at least \(t\) TDAs are
+outside the scope of this work.
+
+\subsection{BVCRSA Cryptographic Construction}
+
+This section presents the cryptographic process of our proposed scheme. It consists of five phases as follows. To ease of understanding, Table \ref{tab:notation} defines notations used throughout the process.
+\begin{table}[t]
+\centering
+\caption{Main Notations}
+\label{tab:notation}
+\footnotesize
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{lp{5.2cm}}
+\toprule
+\textbf{Symbol} & \textbf{Description} \\
+\midrule
+
+$D=(m,k,t,v)$
+& IIoT sensor record \\
+
+$\mathcal D=\{D_1,\ldots,D_d\}$
+& Searchable dimensions \\
+
+$A$
+& User attribute set \\
+
+$u$
+& Canonical range-cover node \\
+
+$I_u$
+& Interval represented by node $u$ \\
+
+$\mathcal C_j(a_j,b_j)$
+& Canonical interval cover for range $[a_j,b_j]$ \\
+
+$PP,MSK$
+& ABSE public parameters and master key \\
+
+$SK_A$
+& Attribute secret key for attribute set $A$ \\
+
+$(pk_{AHE},sk_{AHE})$
+& EC-ElGamal key pair \\
+
+$CT_u^{tag}$
+& ABSE-encrypted searchable tag \\
+
+$\widetilde{B}_u$
+& Protected bitmap of node $u$ \\
+
+$Q,\;T_Q$
+& Conjunctive range query and trapdoor \\
+
+$\mathcal U_Q$
+& Matched-node set \\
+
+$CT_{sum},CT_{count}$
+& Encrypted aggregation result and count \\
+
+$\pi_u$
+& Merkle authentication proof \\
+
+$\Pi_{batch}$
+& Batch verification commitment \\
+
+$State_e$
+& Blockchain-anchored query state \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+\subsubsection*{\textbf{Phase 1 --- System Setup}}
+
+The Trusted Authority (TA) initializes the global
+cryptographic parameters and securely distributes the
+required credentials. Let \(\lambda\) denote the security
+parameter. The TA defines the attribute universe
+\(\mathcal U\) and the searchable numerical dimensions
+\(\mathcal D=\{D_1,D_2,\ldots,D_d\}\).
+
+\paragraph*{Step 1: ABSE and Selector-Key Initialization}
+
+The TA initializes the attribute-based searchable
+encryption (ABSE) scheme
+
+\begin{equation}
+(PP,MSK)
+\leftarrow
+\textsf{ABSE.Setup}(1^\lambda),
+\end{equation}
+
+where \(PP\) contains the BN254 (BN128) bilinear pairing
+parameters
+\((p,\mathbb G_1,\mathbb G_T,e,g)\)
+and associated hash functions, while \(MSK\) denotes the
+ABSE master secret key.
+
+For each authorized user with attribute set
+\(\mathcal A\subseteq\mathcal U\), the TA generates
+
+\begin{equation}
+SK_{\mathcal A}
+\leftarrow
+\textsf{ABSE.KeyGen}
+(MSK,\mathcal A).
+\end{equation}
+
+The TA also generates a long-term bitmap-selector secret
+
+\begin{equation}
+K_s
+\xleftarrow{\$}
+\{0,1\}^{\lambda},
+\end{equation}
+
+which is securely distributed only to authorized users and
+never revealed to the Edge Gateway or the cloud. For each
+query epoch \(e_q\), the user derives the query-specific
+selector key
+
+\begin{equation}
+K_s'
+=
+H
+\bigl(
+K_s
+\parallel
+e_q
+\bigr),
+\end{equation}
+
+which is used only during trapdoor generation and bitmap
+selector construction for the current query epoch.
+
+\paragraph*{Step 2: Threshold Homomorphic Encryption Initialization}
+
+The TA initializes lifted Threshold EC-ElGamal over the
+NIST P-256 elliptic curve. Let
+\((\mathbb G,G,p)\)
+denote the prime-order cyclic group generated by
+\(G\). The TA samples
+
+\[
+x
+\xleftarrow{\$}
+\mathbb Z_p^*,
+\]
+
+computes the public key
+
+\[
+pk_{AHE}
+=
+P
+=
+xG,
+\]
+
+and constructs a random polynomial
+
+\[
+f(z)
+=
+x
++
+a_1z
++\cdots+
+a_{t-1}z^{t-1},
+\]
+
+where
+\(a_i\xleftarrow{\$}\mathbb Z_p^*\).
+
+The TA distributes Shamir secret shares
+
+\[
+sk_\ell
+=
+f(\ell),
+\qquad
+\ell=1,\ldots,n,
+\]
+
+to \(n\) Threshold Decryption Authorities (TDAs), such
+that any subset of at least \(t\) TDAs can jointly decrypt
+an aggregate ciphertext, whereas fewer than \(t\) shares
+reveal no information about \(x\).
+
+A plaintext value
+\(v\in\mathbb Z\)
+is encrypted as
+
+\begin{equation}
+CT_v
+=
+(C_1,C_2)
+=
+(rG,\,
+vG+rP),
+\qquad
+r
+\xleftarrow{\$}
+\mathbb Z_p^*,
+\end{equation}
+
+which satisfies the additive homomorphic property
+
+\[
+\textsf{Enc}(v_1)
++
+\textsf{Enc}(v_2)
+=
+\textsf{Enc}(v_1+v_2).
+\]
+
+Only a threshold of authenticated TDAs can recover the
+final aggregation result; no individual entity possesses
+the complete decryption key.
+
+\paragraph*{Step 3: Cryptographic Primitive Initialization}
+
+The TA initializes the following cryptographic primitives:
+
+\begin{align}
+F(\cdot,\cdot)
+&:
+\{0,1\}^{\lambda}
+\times
+\{0,1\}^{*}
+\rightarrow
+\{0,1\}^{256},
+\\
+H_g
+&:
+\{0,1\}^{*}
+\rightarrow
+\mathbb G_1,
+\\
+H
+&:
+\{0,1\}^{*}
+\rightarrow
+\{0,1\}^{256},
+\\
+\textsf{KDF}
+&:
+\{0,1\}^{\lambda}
+\times
+\{0,1\}^{*}
+\rightarrow
+\{0,1\}^{256},
+\\
+\mathsf{DS}
+&=
+(
+\mathsf{KeyGen},
+\mathsf{Sign},
+\mathsf{Verify}
+).
+\end{align}
+
+Here,
+\(F\) is instantiated using HMAC-SHA-256,
+\(H_g\) denotes a hash-to-group function over BN254,
+\(H\) is SHA-256,
+\(\textsf{KDF}\) is HKDF-SHA-256,
+and
+\(\mathsf{DS}\)
+is instantiated using ECDSA over the secp256k1 elliptic
+curve with SHA-256. The digital signature scheme is
+assumed to be existentially unforgeable under adaptive
+chosen-message attacks (EUF-CMA).
+
+\paragraph*{Step 4: Sensor Provisioning}
+
+For each sensor node \(i\), the TA securely provisions the
+sensor and its corresponding Edge Gateway with
+
+\begin{itemize}
+\item a 256-bit AES-GCM key
+\[
+K_{AES}^{(i)}
+=
+\textsf{KDF}(K_{master},ID_i),
+\]
+
+\item an HMAC authentication key
+\[
+K_{HMAC}^{(i)}
+=
+\textsf{KDF}
+(K_{master},
+ID_i\parallel\texttt{"hmac"}),
+\]
+
+\item the public threshold homomorphic encryption key
+\(pk_{AHE}\).
+\end{itemize}
+
+The sensor uses \(K_{AES}^{(i)}\) with a unique 96-bit
+AES-GCM nonce for each record encryption and computes an
+HMAC over the authenticated payload using
+\(K_{HMAC}^{(i)}\). The corresponding Edge Gateway uses
+\(K_{HMAC}^{(i)}\) to verify sensor authenticity and
+freshness, and \(K_{AES}^{(i)}\) only to generate
+ABSE-protected key envelopes for authorized users.
+Neither entity possesses \(MSK\), \(K_{sel}\), any
+threshold decryption share \(sk_\ell\), or any attribute
+secret key.
+\paragraph*{Step 5: Edge Gateway, User, and TDA Initialization}
+
+The TA samples a secret bitmap-selector seed
+
+\[
+K_{sel}
+\in
+\{0,1\}^{\lambda},
+\]
+
+and generates the Edge Gateway digital-signature key pair
+
+\begin{equation}
+(pk_{DO},sk_{DO})
+\leftarrow
+\mathsf{DS.KeyGen}
+(1^\lambda).
+\end{equation}
+
+The bitmap-selector seed \(K_{sel}\) is securely
+distributed to the Edge Gateway and authorized users
+through authenticated channels, whereas the private
+signing key \(sk_{DO}\) is provisioned exclusively to the
+Edge Gateway. The corresponding public verification key
+\(pk_{DO}\) is published as part of the authenticated
+public system parameters.
+
+The threshold decryption shares
+
+\[
+sk_\ell,
+\qquad
+\ell=1,\ldots,n,
+\]
+
+are securely provisioned to the corresponding Threshold
+Decryption Authorities. Neither \(K_{sel}\),
+\(sk_{DO}\), nor any threshold decryption share is
+disclosed to the cloud server, sensors, or authorized
+users.
+
+The Edge Gateway uses \(K_{sel}\) to generate epoch-bound
+bitmap masks during authenticated index construction and
+uses \(sk_{DO}\) to digitally sign authenticated query
+states before blockchain anchoring. Authorized users
+derive node-specific selectors from \(K_{sel}\) during
+trapdoor generation. Aggregate ciphertexts are decrypted only after the
+authenticated query response has been successfully verified
+and at least \(t\) Threshold Decryption Authorities
+cooperatively perform the threshold decryption protocol.
+
+\paragraph*{Step 6: Blockchain Commitment Initialization}
+
+The TA initializes the authenticated commitment for the
+searchable index, aggregation metadata, and bitmap
+commitments by computing
+
+\begin{equation}
+Acc_e
+=
+H
+\Bigl(
+Root_e^{idx}
+\parallel
+Root_e^{agg}
+\parallel
+Root_e^{bmp}
+\Bigr),
+\end{equation}
+
+followed by the epoch commitment
+
+\begin{equation}
+Root_e
+=
+H
+\Bigl(
+Acc_e
+\parallel
+e
+\Bigr).
+\end{equation}
+
+The genesis commitment \(Root_0\) is anchored on the
+blockchain during system deployment and serves as the
+initial authenticated system state.
+
+Finally, the TA publishes the authenticated public system
+parameters
+
+\[
+(PP,\,
+pk_{AHE},\,
+pk_{DO},\,
+\{pk_\ell\}_{\ell=1}^{n}),
+\]
+
+where \(pk_{AHE}\) is the threshold EC-ElGamal public key,
+\(pk_{DO}\) is the Edge Gateway signature-verification key,
+and \(pk_\ell\) denotes the public verification key of the
+\(\ell\)-th Threshold Decryption Authority.
+
+The following credentials remain confidential:
+
+\[
+(MSK,\,
+K_{sel},\,
+K_{master},\,
+sk_{DO},\,
+\{sk_\ell\}_{\ell=1}^{n}).
+\]
+
+Each authorized user securely receives
+
+\[
+(SK_{\mathcal A},\,K_{sel}),
+\]
+
+whereas the Edge Gateway securely stores
+
+\[
+(K_{sel},\,sk_{DO}),
+\]
+
+and each Threshold Decryption Authority securely stores its
+own threshold decryption share
+
+\[
+sk_\ell.
+\]
+
+Consequently, no user, sensor, cloud server, or individual
+Threshold Decryption Authority possesses sufficient
+information to decrypt aggregation ciphertexts
+independently. Only the cooperation of at least \(t\)
+Threshold Decryption Authorities enables successful
+aggregate decryption.
+
+\subsubsection*{\textbf{Phase 2 --- Sensor-Side Encryption and Edge-Side Authenticated Index Construction}}
+
+This phase transforms sensor readings into authenticated
+searchable structures while preserving confidentiality.
+The resulting index supports secure conjunctive range search,
+encrypted aggregation, and blockchain-verifiable integrity.
+
+
+\paragraph*{Step 1: Sensor-Side Encryption}
+
+For each sensor record
+
+\[
+D=(m,k,t,v),
+\]
+
+the sensor locally derives the canonical interval
+identifier \(u_j\) for each searchable dimension
+\(D_j\) from the plaintext value according to the public
+canonical range-cover tree and constructs the authenticated
+indexing metadata
+
+\[
+Meta_i=\{(D_j,u_j)\}_{j=1}^{d}.
+\]
+
+The sensor then encrypts the complete record using AES-GCM
+with a unique 96-bit nonce \(N_i\) to obtain
+\(CT_{AES}^{(i)}\), and encrypts the numerical value
+\(v_i\) using Threshold EC-ElGamal to produce
+\(CT_v^{(i)}\). Next, it increments the sequence number
+\(seq_i\) and constructs the authenticated payload
+
+\[
+\mathcal P_i
+=
+(
+ID_i,
+seq_i,
+N_i,
+CT_{AES}^{(i)},
+CT_v^{(i)},
+Meta_i,
+Tag_i
+),
+\]
+
+where
+
+\[
+Tag_i
+=
+\textsf{HMAC}_{K_{HMAC}^{(i)}}
+\Bigl(
+ID_i
+\parallel
+seq_i
+\parallel
+N_i
+\parallel
+CT_{AES}^{(i)}
+\parallel
+CT_v^{(i)}
+\parallel
+Meta_i
+\Bigr).
+\]
+
+Finally, the sensor transmits
+\(\mathcal P_i\) to the Edge Gateway. Consequently, the
+Edge Gateway constructs the authenticated searchable index
+using only the authenticated indexing metadata
+\(Meta_i\) without decrypting the sensor record or
+aggregation ciphertext.
+
+\paragraph*{Step 2: Edge-Side Verification}
+
+Upon receiving
+
+\[
+\mathcal P_i
+=
+(
+ID_i,
+seq_i,
+N_i,
+CT_{AES}^{(i)},
+CT_v^{(i)},
+Meta_i,
+Tag_i
+),
+\]
+
+the Edge Gateway verifies
+
+\begin{equation}
+Tag_i
+\stackrel{?}{=}
+\textsf{HMAC}_{K_{HMAC}^{(i)}}
+\Bigl(
+ID_i
+\parallel
+seq_i
+\parallel
+N_i
+\parallel
+CT_{AES}^{(i)}
+\parallel
+CT_v^{(i)}
+\parallel
+Meta_i
+\Bigr),
+\end{equation}
+
+and checks the freshness condition
+
+\[
+seq_i>seq_i^{last}.
+\]
+
+If both checks succeed, the gateway validates that every
+\((D_j,u_j)\in Meta_i\) corresponds to a valid searchable
+dimension and canonical node, updates
+
+\[
+seq_i^{last}
+\leftarrow
+seq_i,
+\]
+
+and forwards
+
+\[
+(
+CT_{AES}^{(i)},
+CT_v^{(i)},
+Meta_i
+)
+\]
+
+to the authenticated index-construction procedure. The
+Edge Gateway constructs the authenticated searchable index
+using only the authenticated indexing metadata
+\(Meta_i\) supplied by the sensor; it neither derives
+canonical nodes from plaintext sensor values nor decrypts
+\(CT_{AES}^{(i)}\) or \(CT_v^{(i)}\).
+
+\paragraph*{Step 3: Searchable Node Construction}
+
+For each canonical node \(u\in\mathcal P_v^{(i)}\) within
+searchable dimension \(D_j\), the Edge Gateway computes
+
+\begin{equation}
+\tau_u^{struct}
+=
+H_g(l_u\parallel r_u),
+\end{equation}
+
+\begin{equation}
+\tau_u^{ctx}
+=
+F(K_{sel},D_j\parallel u),
+\end{equation}
+
+\begin{equation}
+\tau_u
+=
+H_g(\tau_u^{struct}\parallel\tau_u^{ctx}).
+\end{equation}
+
+The corresponding protected bitmap is generated as
+
+\begin{equation}
+\widetilde B_u
+=
+B_u
+\oplus
+F(K_{sel},e\parallel D_j\parallel u),
+\end{equation}
+
+where \(e\) denotes the current index epoch. All bitmaps are
+aligned over the global record space, with the \(i\)-th bit
+corresponding to record identifier \(rid_i\), enabling direct
+bitwise conjunction during conjunctive range evaluation.
+
+The bitmap commitment is computed as
+
+\begin{equation}
+\sigma_u^{bmp}
+=
+H(u\parallel\widetilde B_u),
+\end{equation}
+
+and the searchable tag is encrypted under access policy
+\(\mathcal P\):
+
+\begin{equation}
+CT_u^{tag}
+=
+\mathsf{ABSE.Enc}(PP,\tau_u,\mathcal P).
+\end{equation}
+
+Finally, the authenticated searchable-node commitment is
+constructed as
+
+\begin{equation}
+\sigma_u
+=
+H\!\left(
+u
+\parallel
+CT_u^{tag}
+\parallel
+\sigma_u^{bmp}
+\parallel
+e
+\right),
+\end{equation}
+
+which cryptographically binds the canonical node, encrypted
+searchable tag, bitmap commitment, and epoch into a single
+Merkle-tree leaf for authenticated index construction.
+
+\paragraph*{Step 4: Aggregation Metadata Registration}
+
+For each record \(r_i\), the gateway registers
+
+\begin{equation}
+\mathcal A_i
+=
+\Bigl(
+rid_i,
+CT_v^{(i)},
+Enc^{AHE}_{pk_{AHE}}(1)
+\Bigr),
+\end{equation}
+
+where \(rid_i\) denotes the record identifier.
+
+These encrypted metadata entries are later selected
+according to the final conjunctive bitmap \(B_Q\),
+ensuring that each matched record contributes exactly once
+during aggregation.
+
+\paragraph*{Step 5: Authenticated Commitment Construction}
+
+At the end of epoch \(e\), the Edge Gateway constructs
+
+\begin{equation}
+Root_e^{idx}
+=
+\textsf{MerkleRoot}
+\bigl(
+\{\sigma_u\}
+\bigr),
+\end{equation}
+
+\begin{equation}
+Root_e^{agg}
+=
+\textsf{MerkleRoot}
+\bigl(
+\{\mathcal A_i\}
+\bigr),
+\end{equation}
+
+and
+
+\begin{equation}
+Root_e^{bmp}
+=
+\textsf{MerkleRoot}
+\bigl(
+\{\sigma_u^{bmp}\}
+\bigr).
+\end{equation}
+
+The epoch commitment is computed as
+
+\begin{equation}
+Root_e
+=
+H
+\Bigl(
+Root_e^{idx}
+\parallel
+Root_e^{agg}
+\parallel
+Root_e^{bmp}
+\parallel
+e
+\Bigr).
+\end{equation}
+
+The gateway then computes the signing digest
+
+\begin{equation}
+m_e
+=
+H
+\Bigl(
+Root_e
+\parallel
+ts
+\Bigr),
+\end{equation}
+
+and generates the digital signature
+
+\begin{equation}
+\sigma_{DO}
+=
+\mathsf{DS.Sign}_{sk_{DO}}
+\bigl(
+m_e
+\bigr),
+\end{equation}
+
+where \(\mathsf{DS}\) denotes the ECDSA signature scheme
+over the secp256k1 elliptic curve with SHA-256.
+Finally, the authenticated epoch state
+
+\[
+\bigl(
+e,
+Root_e,
+ts,
+\sigma_{DO}
+\bigr)
+\]
+
+is anchored on the blockchain.
+
+\paragraph*{Step 6: Secure Outsourcing}
+
+The gateway outsources
+
+\begin{equation}
+\Bigl\{
+CT_{AES}^{(i)},
+CT_u^{tag},
+\widetilde B_u,
+\mathcal A_i,
+\sigma_u,
+\sigma_u^{bmp}
+\Bigr\}
+\end{equation}
+
+to the cloud server.
+Consequently, the cloud can recover \(B_u\) during authorized query
+processing using the selector-derived mask, but learns no
+plaintext sensor values.
+
+
+
+\subsubsection*{\textbf{Phase 3 --- Conjunctive Range-Query Trapdoor Generation}}
+
+An authorized user possessing attribute key
+\(SK_{\mathcal A}\) locally generates a conjunctive
+range-query trapdoor without revealing the queried
+dimensions or numerical ranges.
+
+\paragraph*{Step 1: Canonical Range Decomposition}
+
+A conjunctive query is defined as
+
+\begin{equation}
+Q
+=
+\bigwedge_{j=1}^{d}
+(D_j,[a_j,b_j]).
+\end{equation}
+
+For each searchable dimension \(D_j\), the user
+decomposes the query interval into the minimal canonical
+range-cover set
+
+\begin{equation}
+\mathcal C_j
+=
+\{u_{j,1},\ldots,u_{j,\ell_j}\},
+\qquad
+\ell_j
+=
+O(\log |D_j|).
+\end{equation}
+
+\paragraph*{Step 2: Search Token Generation}
+
+For every canonical node
+\(u_{j,i}\in\mathcal C_j\), the user reconstructs the
+searchable tag
+
+\begin{equation}
+\tau_{u_{j,i}}
+=
+H_g
+\!\left(
+H_g(l_u\!\parallel\! r_u)
+\parallel
+F(K_{sel},D_j\!\parallel\!u_{j,i})
+\right),
+\end{equation}
+
+randomizes it as
+
+\begin{equation}
+\tau'_{u_{j,i}}
+=
+\tau_{u_{j,i}}
+g^{r_{j,i}},
+\qquad
+r_{j,i}
+\xleftarrow{\$}
+\mathbb Z_p,
+\end{equation}
+
+and generates the attribute-bound search token
+
+\begin{equation}
+Tok_{j,i}
+=
+\textsf{ABSE.TokenGen}
+(
+SK_{\mathcal A},
+\tau'_{u_{j,i}}
+).
+\end{equation}
+
+\paragraph*{Step 3: Node-Selector Generation}
+
+For each canonical node, the user derives the
+epoch-dependent bitmap selector
+
+\begin{equation}
+Sel_{j,i}
+=
+F
+(
+K_{sel},
+e
+\parallel
+D_j
+\parallel
+u_{j,i}
+),
+\end{equation}
+
+where \(e\) denotes the latest finalized index epoch.
+The selector enables recovery of only the matched bitmap
+
+\begin{equation}
+B_u
+=
+\widetilde B_u
+\oplus
+Sel_{j,i},
+\end{equation}
+
+without revealing the secret selector seed
+\(K_{sel}\).
+
+\paragraph*{Step 4: Trapdoor Construction}
+
+The final query trapdoor is
+
+\begin{equation}
+T_Q
+=
+\Bigl\{
+(
+Tok_{j,i},
+g^{r_{j,i}},
+Sel_{j,i}
+)
+\Bigr\},
+\qquad
+u_{j,i}\in\mathcal C_j,
+\end{equation}
+
+whose size is
+
+\begin{equation}
+|T_Q|
+=
+O
+\!\left(
+\sum_{j=1}^{d}
+\log |D_j|
+\right).
+\end{equation}
+
+\subsubsection*{\textbf{Phase 4 --- Verifiable Conjunctive Range Search and Aggregation}}
+
+Using trapdoor \(T_Q\), the cloud performs searchable
+matching, conjunctive bitmap filtering, encrypted
+aggregation, and verifiable proof generation without
+learning query contents or plaintext sensor data.
+
+\paragraph*{Step 1: Searchable Node Matching and Metadata Retrieval}
+
+For each queried dimension \(D_j\), the authorized user
+includes the query-specific node selectors
+\(\{Sel_{j,i}\}\), generated using the derived selector key
+\(K_s'\), in the query trapdoor \(T_Q\). Upon receiving
+\(T_Q\), the cloud identifies the matched canonical nodes
+
+\begin{equation}
+\begin{aligned}
+\mathcal M_j
+=
+\Bigl\{
+u
+\;\Big|\;
+&
+\textsf{ABSE.Match}
+\bigl(
+Tok_{j,i},
+\\
+&
+CT_u^{tag}
+\bigr)
+=
+1
+\Bigr\}.
+\end{aligned}
+\end{equation}
+
+Since the canonical range-cover decomposition for each
+query interval is deterministic, the expected
+canonical-node set is uniquely determined during trapdoor
+generation. Accordingly, the cloud must return the complete
+matched node set \(\mathcal M_j\). During query
+verification, the user reconstructs the expected canonical
+range cover and verifies that the returned node set is in
+one-to-one correspondence with the expected decomposition.
+Any omission, substitution, or insertion of canonical nodes
+is therefore detected before bitmap recovery and
+aggregation.
+
+For each matched node
+\(u\in\mathcal M_j\),
+the cloud retrieves the associated protected bitmap,
+authenticated searchable-node commitment, bitmap
+commitment, and aggregation metadata
+
+\[
+\Bigl(
+\widetilde B_u,
+\sigma_u,
+\sigma_u^{bmp},
+\mathcal A_i
+\Bigr),
+\]
+
+where
+
+\[
+\mathcal A_i
+=
+\Bigl(
+rid_i,
+CT_v^{(i)},
+Enc^{AHE}_{pk_{AHE}}(1)
+\Bigr).
+\]
+
+Using the query-specific selectors contained in \(T_Q\),
+the cloud performs the subsequent bitmap-recovery
+operations without learning the long-term selector secret
+\(K_s\) or the derived selector key \(K_s'\).
+
+\paragraph*{Step 2: Conjunctive Bitmap Filtering}
+
+For each matched canonical node \(u\in\mathcal M_j\), the
+cloud recovers the corresponding bitmap by removing the
+protected mask using the node-specific selector contained in
+the query trapdoor:
+
+\begin{equation}
+B_u
+=
+\widetilde B_u
+\oplus
+Sel_{j,i}.
+\end{equation}
+
+Since the selector is generated exclusively for the queried
+canonical node, the cloud can recover only the bitmaps
+required for the authorized query without learning the secret
+bitmap-selector seed.
+
+All protected bitmaps are constructed over the same global
+record space. Consequently, every recovered bitmap \(B_u\)
+has identical length \(N_e\), where \(N_e\) denotes the total
+number of indexed records in epoch \(e\), and the \(i\)-th bit
+of every bitmap corresponds to the same global record
+identifier \(rid_i\). Therefore, bitwise OR and AND
+operations are performed directly over aligned bitmaps
+without requiring additional index transformation.
+
+For each queried dimension \(D_j\), the cloud computes the
+dimension-level candidate bitmap
+
+\begin{equation}
+B_{D_j}
+=
+\bigvee_{u\in\mathcal M_j}
+B_u.
+\end{equation}
+
+The final conjunctive bitmap is
+
+\begin{equation}
+B_Q
+=
+\bigwedge_{j=1}^{d}
+B_{D_j}.
+\end{equation}
+
+A record identifier \(r_i\) is selected if and only if
+
+\begin{equation}
+B_Q[i]
+=
+1.
+\end{equation}
+
+Accordingly, the matched record set is
+
+\begin{equation}
+\mathcal R_Q
+=
+\{\,r_i \mid B_Q[i]=1\,\}.
+\end{equation}
+
+Since the canonical range-cover decomposition is
+deterministic and every recovered bitmap corresponds to an
+authenticated canonical node satisfying the query predicate,
+the resulting bitmap \(B_Q\) uniquely represents the records
+that satisfy the conjunctive range query. Consequently,
+\(\mathcal R_Q\) is uniquely determined by the verified bitmap
+and serves as the exclusive input to the subsequent
+homomorphic aggregation procedure.
+
+The matched canonical-node set retained for proof generation
+is
+
+\begin{equation}
+\mathcal U_Q
+=
+\bigcup_{j=1}^{d}
+\mathcal M_j.
+\end{equation}
+\paragraph*{Step 3: Bitmap-Constrained Homomorphic Aggregation}
+
+The verified query bitmap \(B_Q\) uniquely determines the
+matched record set
+
+\begin{equation}
+\mathcal R_Q
+=
+\{\,r_i \mid B_Q[i]=1\,\}.
+\end{equation}
+
+The cloud performs homomorphic aggregation exclusively over
+the authenticated aggregation metadata associated with
+records in \(\mathcal R_Q\). Specifically, the aggregate
+ciphertexts are computed as
+
+\begin{equation}
+CT_{sum}
+=
+\bigoplus_{r_i\in\mathcal R_Q}
+CT_v^{(i)},
+\end{equation}
+
+\begin{equation}
+CT_{count}
+=
+\bigoplus_{r_i\in\mathcal R_Q}
+Enc^{AHE}_{pk_{AHE}}(1).
+\end{equation}
+
+Since \(\mathcal R_Q\) is uniquely determined by the
+verified bitmap \(B_Q\), each matched record contributes
+exactly once to both \(CT_{sum}\) and \(CT_{count}\),
+thereby eliminating duplicate counting caused by
+overlapping canonical nodes. Consequently, no ciphertext
+outside the verified record set \(\mathcal R_Q\)
+participates in the aggregation.
+
+The aggregate ciphertexts remain encrypted under the
+Threshold EC-ElGamal public key \(pk_{AHE}\) and are
+subsequently decrypted only through the cooperation of at
+least \(t\) TDAs after the
+authenticated query response has been successfully
+verified.
+
+\paragraph*{Step 4: Verifiable Result Construction and Return}
+
+For every matched canonical node
+\(u\in\mathcal U_Q\), the cloud generates the searchable-node
+Merkle proof
+
+\begin{equation}
+\pi_u
+=
+\textsf{MerkleProof}
+\bigl(
+\sigma_u,
+Root_e^{idx}
+\bigr),
+\end{equation}
+
+and the bitmap-commitment Merkle proof
+
+\begin{equation}
+\pi_u^{bmp}
+=
+\textsf{MerkleProof}
+\bigl(
+\sigma_u^{bmp},
+Root_e^{bmp}
+\bigr).
+\end{equation}
+
+The cloud then constructs the authenticated batch
+commitment
+
+\begin{equation}
+\begin{aligned}
+\Pi_{batch}
+=
+H\Bigl(
+&
+Acc_e
+\parallel
+Root_e^{agg}
+\\
+&
+\parallel
+H(\{\sigma_u\}_{u\in\mathcal U_Q})
+\\
+&
+\parallel
+H(\{\sigma_u^{bmp}\}_{u\in\mathcal U_Q})
+\\
+&
+\parallel
+H(B_Q)
+\\
+&
+\parallel
+CT_{sum}
+\parallel
+CT_{count}
+\Bigr).
+\end{aligned}
+\end{equation}
+
+which binds the authenticated searchable nodes,
+bitmap commitments, conjunctive bitmap, aggregation
+ciphertexts, and blockchain-anchored aggregation state into
+a single verifiable proof.
+
+Finally, the cloud returns
+
+\begin{equation}
+\mathcal Rsp_Q
+=
+\Bigl(
+CT_{sum},
+CT_{count},
+B_Q,
+\Pi_{batch},
+\{\sigma_u\}_{u\in\mathcal U_Q},
+\{\sigma_u^{bmp}\}_{u\in\mathcal U_Q},
+\{\pi_u\}_{u\in\mathcal U_Q},
+\{\pi_u^{bmp}\}_{u\in\mathcal U_Q},
+Root_e
+\Bigr).
+\end{equation}
+
+If record retrieval is requested, the corresponding encrypted
+records
+
+\[
+CT_{AES}^{(i)},
+\qquad
+r_i\in\mathcal R_Q,
+\]
+
+are also included in the response.
+
+
+\subsubsection*{\textbf{Phase 5 --- Blockchain-Anchored Verification and Threshold Decryption}}
+
+Upon receiving
+
+\[
+\begin{aligned}
+Rsp_Q
+=
+\Bigl(
+&
+e,
+CT_{sum},
+CT_{count},
+B_Q,
+\mathcal R_Q,
+\Pi_{batch},
+\\
+&
+\{\sigma_u\},
+\{\sigma_u^{bmp}\},
+\{\pi_u\},
+\{\pi_u^{bmp}\},
+Root_e,
+\{CT_{K_i}\}
+\Bigr),
+\end{aligned}
+\]
+
+the user first verifies the authenticity, integrity,
+completeness, and freshness of the returned query result
+before performing threshold aggregate decryption or
+optional record decryption.
+
+\paragraph*{Step 1: Blockchain and Query-State Verification}
+
+The user retrieves the authenticated state
+
+\[
+State_e
+=
+(
+e,
+Root_e^{idx},
+Root_e^{agg},
+Root_e^{bmp},
+Root_e,
+ts,
+\sigma_{DO}
+)
+\]
+
+from the blockchain, verifies
+
+\begin{equation}
+\mathsf{DS.Verify}_{pk_{DO}}
+\bigl(
+H(Root_e\parallel ts),
+\sigma_{DO}
+\bigr)
+=
+1,
+\end{equation}
+
+and confirms that \(e\) is the latest finalized epoch.
+The user reconstructs the canonical range cover from the
+query trapdoor, verifies that the returned canonical-node
+set matches the expected decomposition, validates all
+Merkle proofs against
+\(Root_e^{idx}\)
+and
+\(Root_e^{bmp}\),
+and recomputes
+
+\begin{equation}
+\begin{aligned}
+\Pi_{batch}^{*}
+=
+H\Bigl(
+&
+Root_e
+\parallel
+H(\{\sigma_u\})
+\\
+&
+\parallel
+H(\{\sigma_u^{bmp}\})
+\parallel
+H(B_Q)
+\\
+&
+\parallel
+H(\mathcal R_Q)
+\parallel
+CT_{sum}
+\parallel
+CT_{count}
+\Bigr).
+\end{aligned}
+\end{equation}
+
+The response is accepted for decryption only if
+
+\[
+\Pi_{batch}^{*}
+=
+\Pi_{batch}.
+\]
+Successful verification confirms the authenticity,
+integrity, completeness, and freshness of the authenticated
+query state, and cryptographically binds the returned
+aggregation ciphertexts
+\((CT_{sum},CT_{count})\)
+to the verified bitmap
+\(B_Q\)
+and matched record set
+\(\mathcal R_Q\).
+\paragraph*{Step 2: Threshold Aggregate Decryption}
+
+After successful verification, the user submits
+\((CT_{sum},CT_{count})\) to a set
+\(S\) of Threshold Decryption Authorities satisfying
+\(|S|\ge t\). Each authority
+\(\ell\in S\) computes
+
+\[
+\delta_\ell^{sum}
+=
+sk_\ell C_1^{sum},
+\qquad
+\delta_\ell^{count}
+=
+sk_\ell C_1^{count},
+\]
+
+which are verified using the corresponding public
+verification keys. The user reconstructs
+
+\[
+D_{sum}
+=
+\sum_{\ell\in S}
+\lambda_\ell
+\delta_\ell^{sum},
+\qquad
+D_{count}
+=
+\sum_{\ell\in S}
+\lambda_\ell
+\delta_\ell^{count},
+\]
+
+and recovers
+
+\[
+M_{sum}
+=
+C_2^{sum}
+-
+D_{sum},
+\qquad
+M_{count}
+=
+C_2^{count}
+-
+D_{count}.
+\]
+
+Finally,
+
+\[
+Sum
+=
+\mathsf{BSGS}(M_{sum}),
+\qquad
+Count
+=
+\mathsf{BSGS}(M_{count}),
+\]
+
+and
+
+\[
+Avg
+=
+\frac{Sum}{Count},
+\qquad
+Count>0.
+\]
+
+\paragraph*{Step 3: Optional Record Decryption}
+
+During data outsourcing, the Edge Gateway generates an
+ABSE-protected key envelope
+
+\[
+CT_{K_i}
+=
+\textsf{ABSE.Enc}
+(PP,
+K_{AES}^{(i)},
+\mathcal P).
+\]
+
+For record-retrieval queries, each returned
+\(CT_{AES}^{(i)}\) is accompanied by
+\(CT_{K_i}\). A user whose attributes satisfy
+\(\mathcal P\) recovers
+\(K_{AES}^{(i)}\) and decrypts
+
+\[
+D_i
+=
+\textsf{AES\mbox{-}GCM.Dec}
+(K_{AES}^{(i)},
+CT_{AES}^{(i)}).
+\]
+
+The AES-GCM authentication tag provides end-to-end record
+integrity and authenticity. The query result is accepted
+only if blockchain verification, canonical-cover
+verification, Merkle-proof validation, authenticated batch
+verification, and the requested decryption operation(s)
+complete successfully; otherwise, the response is rejected.
+
+\section{Security Analysis}
+
+\subsection{Security Model}
+
+We consider a probabilistic polynomial-time (PPT)
+adversary \(\mathcal A\) that controls the cloud server
+and communication channels. During normal protocol
+execution, the Edge Gateway is assumed to be
+honest-but-curious and faithfully performs sensor
+authentication, authenticated index construction,
+aggregation-metadata generation, and blockchain
+commitment, while attempting to infer information only
+from the permitted leakage.
+
+The adversary observes encrypted records, searchable
+ciphertexts, protected bitmaps, aggregation metadata,
+query trapdoors, Merkle proofs, authenticated batch
+commitments, blockchain states, and the leakage function
+\(\mathcal L_{BVCRSA}\). It may adaptively issue
+ciphertext, trapdoor, aggregation, and verification
+queries, and may attempt to infer plaintext information
+beyond the permitted leakage, generate unauthorized
+trapdoors, omit, modify, replay, or fabricate query
+responses, or forge verification proofs.
+
+The adversary does not possess the ABSE master secret
+\(MSK\), the long-term bitmap-selector secret
+\(K_s\), the Edge Gateway signing key
+\(sk_{DO}\), any unauthorized attribute secret key, or
+the threshold decryption shares
+\(\{sk_\ell\}_{\ell=1}^{n}\). The query-specific selector
+key
+
+\[
+K_s'
+=
+H(K_s\parallel e_q)
+\]
+
+is deterministically derived only by authorized users
+during trapdoor generation and is never disclosed to the
+Edge Gateway or the cloud. We assume that fewer than
+\(t\) Threshold Decryption Authorities (TDAs) may be
+corrupted; consequently, the threshold decryption key
+cannot be reconstructed and aggregation ciphertexts
+remain confidential. Detecting or tolerating a malicious
+Edge Gateway that intentionally anchors incorrect
+authenticated states before blockchain commitment is
+outside the scope of this work.
+
+The security objective of BVCRSA is to guarantee
+
+\begin{equation}
+\begin{aligned}
+&
+\mathsf{Privacy}
+\wedge
+\mathsf{Confidentiality}
+\wedge
+\mathsf{AntiCollusion}
+\\
+&
+{}\wedge
+\mathsf{QueryStateIntegrity}
+\wedge
+\mathsf{QueryStateCompleteness}
+\wedge
+\mathsf{Freshness},
+\end{aligned}
+\end{equation}
+
+while revealing only the leakage explicitly specified by
+\(\mathcal L_{BVCRSA}\). In particular, BVCRSA
+cryptographically authenticates that the returned
+aggregation ciphertexts correspond to the verified
+matched record set and authenticated query state, but it
+does not claim general verifiable computation for
+arbitrary homomorphic operations.
+\subsection{Leakage Function}
+
+BVCRSA follows the standard adaptive searchable-encryption
+leakage model and reveals only the structural information
+necessary for encrypted query processing.
+
+The overall leakage profile is defined as
+
+\begin{equation}
+\mathcal L_{BVCRSA}
+=
+\Bigl(
+\mathcal L_{\mathsf{Setup}},
+\mathcal L_{\mathsf{Data}},
+\mathcal L_{\mathsf{Query}},
+\mathcal L_{\mathsf{Access}}
+\Bigr).
+\end{equation}
+
+\paragraph*{Setup Leakage.}
+
+The setup phase reveals only the public parameters
+
+\begin{equation}
+\mathcal L_{\mathsf{Setup}}
+=
+PP.
+\end{equation}
+
+No master secret keys, attribute secret keys, aggregation
+private keys, bitmap-selector seed, or signing keys are
+disclosed.
+
+\paragraph*{Data Leakage.}
+
+For each outsourced record, the cloud learns
+
+\begin{equation}
+\mathcal L_{\mathsf{Data}}
+=
+\Bigl(
+|CT_{AES}|,
+|CT_v|,
+|\mathcal P_v|
+\Bigr),
+\end{equation}
+
+where \(|CT_{AES}|\) and \(|CT_v|\) denote the ciphertext
+sizes and \(|\mathcal P_v|\) denotes the number of canonical
+range-cover nodes associated with the record.
+
+\paragraph*{Query Leakage.}
+
+For each query, the cloud learns
+
+\begin{equation}
+\mathcal L_{\mathsf{Query}}
+=
+\Bigl(
+|T_Q|,
+Pat_Q
+\Bigr),
+\end{equation}
+
+where \(Pat_Q\) denotes the search pattern indicating whether
+two trapdoors generate identical matched-node sets.
+
+\paragraph*{Access Leakage.}
+
+During query execution, the cloud observes
+
+\begin{equation}
+\begin{aligned}
+\mathcal L_{\mathsf{Access}}
+=
+\Bigl(
+&
+\mathcal U_Q,
+\{B_u\},
+B_Q,
+\\
+&
+\mathcal R_Q,
+|\mathcal R_Q|
+\Bigr),
+\end{aligned}
+\end{equation}
+
+where
+
+\begin{itemize}
+\item \(\mathcal U_Q\) denotes the matched canonical-node set;
+\item \(\{B_u\}\) denotes the recovered canonical-node bitmaps;
+\item \(B_Q\) denotes the conjunctive query bitmap;
+\item \(\mathcal R_Q\) denotes the matched record set;
+\item \(|\mathcal R_Q|\) denotes the query-result cardinality.
+\end{itemize}
+
+For consistency with standard searchable-encryption
+terminology, we define
+
+\begin{equation}
+\mathsf{SearchPattern}
+=
+Pat_Q,
+\end{equation}
+
+\begin{equation}
+\mathsf{AccessPattern}
+=
+\Bigl(
+\mathcal U_Q,
+\mathcal R_Q
+\Bigr),
+\end{equation}
+
+and
+
+\begin{equation}
+\begin{aligned}
+\mathsf{SizePattern}
+=
+\Bigl(
+&
+|CT_{AES}|,
+|CT_v|,
+|\mathcal P_v|,
+\\
+&
+|T_Q|,
+|\mathcal U_Q|,
+|\mathcal R_Q|
+\Bigr).
+\end{aligned}
+\end{equation}
+
+Accordingly,
+
+\begin{equation}
+\mathcal L_{BVCRSA}
+=
+\Bigl(
+PP,
+\mathsf{SizePattern},
+\mathsf{SearchPattern},
+\mathsf{AccessPattern}
+\Bigr),
+\end{equation}
+
+or equivalently,
+
+\begin{equation}
+\begin{aligned}
+\mathcal L_{BVCRSA}
+=
+\Bigl(
+&
+PP,
+|CT_{AES}|,
+|CT_v|,
+|\mathcal P_v|,
+\\
+&
+|T_Q|,
+Pat_Q,
+\mathcal U_Q,
+\{B_u\},
+\\
+&
+B_Q,
+\mathcal R_Q,
+|\mathcal R_Q|
+\Bigr).
+\end{aligned}
+\end{equation}
+
+Beyond the information explicitly captured by
+\(\mathcal L_{BVCRSA}\), BVCRSA reveals no additional
+information regarding plaintext sensor records, plaintext
+numerical values, queried numerical ranges, searchable
+dimensions, homomorphic decryption results, bitmap-selector
+secrets, aggregation private keys, or authenticated
+query-state signing keys.
+
+The leakage specified by
+\(\mathcal L_{BVCRSA}\)
+reflects the practical tradeoff adopted by most
+searchable-encryption schemes. An honest-but-curious cloud
+may correlate repeated or overlapping queries through the
+revealed matched canonical nodes, bitmap intersections,
+accessed records, and result cardinality, thereby inferring
+coarse information such as query selectivity or data
+distribution. Representative searchable-encryption schemes
+(e.g., Refs.~\cite{ref39,ref40,ref41,ref44}) likewise reveal
+search and access patterns, although the exact leakage
+profiles differ according to their constructions. BVCRSA
+further reveals authenticated canonical-node and bitmap
+information to enable query-state completeness verification
+and encrypted aggregation without relying on ORAM,
+zero-knowledge proofs, or trusted hardware.
+
+\subsection{Theorem 1: Conjunctive Query Privacy}
+
+\textbf{Theorem 1.}
+Assuming the adaptive security of ABSE and the
+pseudorandomness of
+\(F(K_s',\cdot)\), BVCRSA preserves conjunctive query
+privacy against probabilistic polynomial-time adversaries,
+revealing no information beyond the leakage function
+\(\mathcal L_{BVCRSA}\).
+
+\textbf{Proof.}
+
+We prove the theorem through a sequence of games.
+
+\textbf{Game \(G_0\).}
+The adversary observes the real execution of BVCRSA,
+including searchable ciphertexts, query tokens, node
+selectors, authenticated batch commitments, Merkle proofs,
+and blockchain states.
+
+\textbf{Game \(G_1\).}
+Replace each node selector
+
+\begin{equation}
+Sel_{j,i}
+=
+F
+\bigl(
+K_s',
+D_j
+\parallel
+u_{j,i}
+\bigr)
+\end{equation}
+
+with a uniformly random value of the same length.
+Distinguishing \(G_1\) from \(G_0\) breaks the
+pseudorandomness of
+\(F(K_s',\cdot)\). Therefore,
+
+\begin{equation}
+\left|
+Pr[G_1]-Pr[G_0]
+\right|
+\le
+Adv_{\mathcal A}^{PRF}(\lambda).
+\end{equation}
+
+\textbf{Game \(G_2\).}
+Replace the ABSE searchable ciphertexts and query tokens
+with simulated values generated solely from the leakage
+function
+\(\mathcal L_{BVCRSA}\).
+By the adaptive security of ABSE,
+
+\begin{equation}
+\left|
+Pr[G_2]-Pr[G_1]
+\right|
+\le
+Adv_{\mathcal A}^{ABSE}(\lambda).
+\end{equation}
+
+Hence, the adversary's view in \(G_2\) is completely
+determined by
+\(\mathcal L_{BVCRSA}\), revealing no additional
+information regarding plaintext sensor records, queried
+numerical ranges, searchable dimensions, homomorphic
+decryption results, or secret cryptographic material.
+
+Therefore,
+
+\begin{equation}
+\begin{aligned}
+Adv_{\mathcal A}^{CQ}
+\le {}&
+Adv_{\mathcal A}^{PRF}(\lambda)
++
+Adv_{\mathcal A}^{ABSE}(\lambda)
+\\
+&
++
+negl(\lambda).
+\end{aligned}
+\end{equation}
+
+Hence, BVCRSA preserves conjunctive query privacy under
+the leakage function
+\(\mathcal L_{BVCRSA}\).
+\hfill\(\square\)
+
+\subsection{Theorem 2: Confidentiality of Outsourced IIoT Sensor Data}
+
+\textbf{Theorem 2.}
+Assuming the IND-CPA security of AES-GCM and Threshold
+EC-ElGamal, BVCRSA preserves the confidentiality of
+outsourced IIoT sensor data against probabilistic
+polynomial-time adversaries, revealing no information
+beyond the leakage function
+\(\mathcal L_{BVCRSA}\).
+
+\textbf{Proof.}
+
+Each sensor record
+
+\[
+D_i=(m_i,k_i,t_i,v_i)
+\]
+
+is encrypted using AES-GCM as
+
+\begin{equation}
+CT_{AES}^{(i)}
+=
+\textsf{AES\mbox{-}GCM.Enc}
+\bigl(
+K_{AES}^{(i)},
+D_i
+\bigr),
+\end{equation}
+
+which is computationally indistinguishable from random
+under the IND-CPA security of AES-GCM.
+
+The numerical value \(v_i\) is independently encrypted
+using Threshold EC-ElGamal as
+
+\begin{equation}
+CT_v^{(i)}
+=
+(r_iG,\,
+v_iG+r_iP),
+\end{equation}
+
+where
+
+\[
+r_i
+\xleftarrow{\$}
+\mathbb Z_p^{*}.
+\]
+
+The corresponding decryption key is distributed among
+\(n\) Threshold Decryption Authorities using Shamir secret
+sharing. Under the assumption that fewer than \(t\)
+authorities are corrupted, neither the cloud nor any
+coalition of unauthorized users and fewer than \(t\) TDAs
+can reconstruct the decryption key or recover the
+underlying plaintext values.
+
+Consequently, an adversary learns only the information
+explicitly specified by
+\(\mathcal L_{BVCRSA}\), while the confidentiality of both
+encrypted sensor records and aggregation ciphertexts is
+preserved. Therefore,
+
+\begin{equation}
+\begin{aligned}
+Adv_{\mathcal A}^{Conf}
+\le {}&
+Adv_{\mathcal A}^{AES}(\lambda)
+\\
+&
++
+Adv_{\mathcal A}^{T\text{-}ECElGamal}(\lambda)
++
+negl(\lambda),
+\end{aligned}
+\end{equation}
+
+where
+\(Adv_{\mathcal A}^{AES}(\lambda)\)
+and
+\(Adv_{\mathcal A}^{T\text{-}ECElGamal}(\lambda)\)
+denote the IND-CPA advantages against AES-GCM and
+Threshold EC-ElGamal, respectively. Hence, BVCRSA
+preserves the confidentiality of outsourced IIoT sensor
+data.
+\hfill\(\square\)
+
+\subsection{Theorem 3: Threshold Aggregate-Decryption Security}
+
+\textbf{Theorem 3.}
+Assuming the IND-CPA security of Threshold EC-ElGamal,
+no probabilistic polynomial-time adversary controlling the
+cloud server, unauthorized users, and fewer than \(t\)
+Threshold Decryption Authorities can recover the plaintext
+of an aggregate ciphertext or reconstruct the aggregation
+private key.
+
+\textbf{Proof.}
+
+Let
+
+\[
+CT=(C_1,C_2)
+\]
+
+denote an aggregate ciphertext encrypted under the public
+key \(pk_{AHE}\). The corresponding private key is shared
+among \(n\) Threshold Decryption Authorities using a
+\((t,n)\)-threshold secret-sharing scheme, where each
+authority stores only its secret share \(sk_\ell\).
+
+For decryption, each participating authority computes the
+partial decryption
+
+\begin{equation}
+\delta_\ell
+=
+sk_\ell C_1.
+\end{equation}
+
+After collecting at least \(t\) valid partial decryptions,
+the user reconstructs
+
+\begin{equation}
+D
+=
+\sum_{\ell\in S}
+\lambda_\ell
+\delta_\ell,
+\qquad
+|S|\ge t,
+\end{equation}
+
+where \(\lambda_\ell\) denotes the corresponding Lagrange
+coefficient. The plaintext group element is then recovered
+as
+
+\begin{equation}
+M
+=
+C_2-D.
+\end{equation}
+
+Since fewer than \(t\) secret shares reveal no information
+about the underlying decryption key, neither the cloud nor
+any coalition of unauthorized users and fewer than \(t\)
+Threshold Decryption Authorities can reconstruct the
+private key or decrypt aggregate ciphertexts. Moreover,
+partial decryptions are generated only after successful
+verification of the authenticated query response in
+Phase~5, preventing unauthorized decryption requests.
+
+Therefore,
+
+\begin{equation}
+Adv_{\mathcal A}^{TDec}
+\le
+Adv_{\mathcal A}^{T\text{-}ECElGamal}(\lambda)
++
+negl(\lambda).
+\end{equation}
+
+Hence, BVCRSA preserves threshold-secure aggregate
+decryption.
+\hfill\(\square\)
+
+\subsection{Theorem 4: Anti-Collusion Security}
+
+\textbf{Theorem 4.}
+Colluding users cannot generate valid search trapdoors for unauthorized
+conjunctive range queries unless their combined attributes satisfy the
+embedded access policy.
+
+\textbf{Proof.}
+
+For every searchable node, the corresponding search token is generated as
+
+\begin{equation}
+\begin{aligned}
+Tok_{j,i} = {} & \textsf{ABSE.TokenGen} \left( SK_{\mathcal A}, \tau_{u_{j,i}} \right),
+\end{aligned}
+\end{equation}
+
+where \(SK_{\mathcal A}\) is the attribute secret key associated with
+attribute set \(\mathcal A\).
+
+A valid token can be generated only when the user's attribute set
+satisfies the access policy
+
+\begin{equation}
+\mathcal A
+\models
+\mathcal P.
+\end{equation}
+
+Suppose multiple users collude by combining attribute secret keys
+
+\begin{equation}
+SK_{\mathcal A_1},
+SK_{\mathcal A_2},
+\ldots,
+SK_{\mathcal A_t}.
+\end{equation}
+
+Under the anti-collusion property of ABSE, secret-key components are
+cryptographically bound to their originating users and cannot be
+combined to construct a valid key for an unauthorized attribute set.
+
+Consequently, the colluding users cannot generate a valid token
+
+\begin{equation}
+Tok_{j,i}^{*}
+\end{equation}
+
+for any policy that is not individually satisfied.
+
+Therefore,
+
+\begin{equation}
+Adv_{\mathcal A}^{Coll}
+\le
+Adv_{\mathcal A}^{ABSE}
++
+negl(\lambda).
+\end{equation}
+
+Hence, BVCRSA achieves anti-collusion security.
+\subsection{Theorem 5: Aggregation Correctness}
+
+\textbf{Theorem 5.}
+The aggregate ciphertexts are computed exclusively over the
+records satisfying all queried range predicates, with each
+matched record contributing exactly once.
+
+\textbf{Proof.}
+
+For each queried dimension \(D_j\), the cloud identifies the
+matched canonical-node set
+
+\begin{equation}
+\begin{aligned}
+\mathcal M_j
+=
+\Bigl\{
+u
+\;\Big|\;
+&
+\textsf{ABSE.Match}
+(
+Tok_{j,i},
+\\
+&
+CT_u^{tag}
+)
+=
+1
+\Bigr\}.
+\end{aligned}
+\end{equation}
+
+The corresponding dimension-level bitmap is obtained by
+
+\begin{equation}
+B_{D_j}
+=
+\bigvee_{u\in\mathcal M_j}
+B_u,
+\end{equation}
+
+and the conjunctive bitmap is computed as
+
+\begin{equation}
+B_Q
+=
+\bigwedge_{j=1}^{d}
+B_{D_j}.
+\end{equation}
+
+Hence,
+
+\begin{equation}
+\begin{aligned}
+B_Q[i]=1
+\iff
+&
+(D_1\in[a_1,b_1])
+\\
+&
+\wedge\cdots\wedge
+(D_d\in[a_d,b_d]),
+\end{aligned}
+\end{equation}
+
+and the matched record set is uniquely determined as
+
+\begin{equation}
+\mathcal R_Q
+=
+\{\,r_i\mid B_Q[i]=1\,\}.
+\end{equation}
+
+The cloud performs homomorphic aggregation only over the
+authenticated aggregation metadata associated with
+\(\mathcal R_Q\):
+
+\begin{equation}
+CT_{sum}
+=
+\bigoplus_{r_i\in\mathcal R_Q}
+CT_v^{(i)},
+\end{equation}
+
+\begin{equation}
+CT_{count}
+=
+\bigoplus_{r_i\in\mathcal R_Q}
+Enc^{AHE}_{pk_{AHE}}(1).
+\end{equation}
+
+Since each record identifier appears at most once in
+\(\mathcal R_Q\), every matched record contributes exactly
+once to both aggregate ciphertexts, while no record outside
+\(\mathcal R_Q\) participates in the aggregation.
+Furthermore, the authenticated batch commitment binds
+\((B_Q,\mathcal R_Q,CT_{sum},CT_{count})\), enabling the
+user to verify in Phase~5 that the returned aggregate
+ciphertexts correspond to the verified query result.
+
+Therefore, the aggregate ciphertexts correctly represent
+the sum and count of all records satisfying the conjunctive
+range query.
+\hfill\(\square\)
+\subsection{Theorem 6: Verifiable Query-State Integrity}
+
+\textbf{Theorem 6.}
+A probabilistic polynomial-time adversary cannot forge,
+modify, substitute, omit, or replay the authenticated
+query state or the aggregation ciphertexts bound to that
+state without detection, except with negligible
+probability.
+
+\textbf{Proof.}
+
+For each epoch \(e\), the Edge Gateway computes
+
+\begin{equation}
+Root_e
+=
+H\!\left(
+Root_e^{idx}
+\parallel
+Root_e^{agg}
+\parallel
+Root_e^{bmp}
+\parallel
+e
+\right),
+\end{equation}
+
+computes
+
+\begin{equation}
+m_e
+=
+H(Root_e\parallel ts),
+\end{equation}
+
+and signs
+
+\begin{equation}
+\sigma_{DO}
+=
+\mathsf{DS.Sign}_{sk_{DO}}(m_e),
+\end{equation}
+
+before anchoring
+\((e,Root_e,ts,\sigma_{DO})\)
+on the blockchain.
+
+For each query response, the cloud computes
+
+\begin{equation}
+\begin{aligned}
+\Pi_{batch}
+=
+H\Bigl(
+&
+Root_e
+\parallel
+H(\{\sigma_u\})
+\parallel
+H(\{\sigma_u^{bmp}\})
+\\
+&
+\parallel
+H(B_Q)
+\parallel
+H(\mathcal R_Q)
+\parallel
+CT_{sum}
+\parallel
+CT_{count}
+\Bigr).
+\end{aligned}
+\end{equation}
+
+During verification, the user reconstructs the expected
+canonical range cover from the submitted query,
+verifies that the returned canonical-node set matches the
+expected decomposition, validates the Merkle proofs for
+the authenticated searchable-node and bitmap commitments,
+and recomputes
+\(\Pi_{batch}\).
+Consequently, any modification, substitution, omission, or
+replay of authenticated searchable nodes, bitmap
+commitments, query-state commitments, aggregation
+ciphertexts, or blockchain states changes either
+\(Root_e\), \(m_e\), or \(\Pi_{batch}\), causing
+verification failure. Replay attacks are prevented by
+requiring the latest finalized blockchain epoch.
+
+Therefore,
+
+\begin{equation}
+\begin{aligned}
+Pr[\mathsf{Forge}]
+\le {}&
+Adv_{\mathcal A}^{\mathsf{ECDSA\mbox{-}EUF\mbox{-}CMA}}
+(\lambda)
+\\
+&
++
+Adv_{H}^{CR}(\lambda)
++
+negl(\lambda),
+\end{aligned}
+\end{equation}
+
+where a successful forgery requires either forging a valid
+Edge Gateway signature or finding a collision in the hash
+function \(H(\cdot)\). Hence, BVCRSA guarantees the
+integrity, completeness, and freshness of the
+blockchain-authenticated query state while
+cryptographically binding the returned aggregation
+ciphertexts to the verified matched record set and
+authenticated query state. This theorem does not claim
+general verifiable computation of homomorphic aggregation;
+rather, it guarantees that any accepted aggregation
+ciphertexts are authenticated with respect to the verified
+query state.
+
+\hfill\(\square\)
+
+\subsection{Theorem 7: Cryptographic Query-Token Unlinkability}
+
+\textbf{Theorem 7.}
+Assuming the pseudorandomness of
+\(F(K_s',\cdot)\) and the adaptive security of ABSE,
+BVCRSA provides cryptographic unlinkability of
+query-specific node selectors and randomized ABSE query
+tokens across different query epochs, subject to the
+leakage function
+\(\mathcal L_{BVCRSA}\).
+
+\textbf{Proof.}
+
+For each query epoch \(e_q\), the authorized user derives
+the query-specific selector key
+
+\[
+K_s'
+=
+H(K_s\parallel e_q),
+\]
+
+and computes the node selector
+
+\begin{equation}
+Sel_{j,i}
+=
+F
+\Bigl(
+K_s',
+D_j
+\parallel
+u_{j,i}
+\Bigr).
+\end{equation}
+
+Since \(K_s'\) is uniquely derived for each query epoch,
+selectors generated for the same canonical node across
+different epochs are computationally independent under the
+pseudorandomness of
+\(F(K_s',\cdot)\).
+
+Furthermore, each ABSE query token is freshly randomized
+during trapdoor generation. Under the adaptive security of
+ABSE, these randomized tokens reveal no information beyond
+the leakage function
+\(\mathcal L_{BVCRSA}\).
+
+Therefore, distinguishing whether two node selectors or
+ABSE query tokens originate from the same query beyond the
+permitted leakage would require either distinguishing
+\(F(K_s',\cdot)\) from a random function or breaking the
+adaptive security of ABSE. Hence,
+
+\begin{equation}
+Adv_{\mathcal A}^{Link}
+\le
+Adv_{\mathcal A}^{PRF}(\lambda)
++
+Adv_{\mathcal A}^{ABSE}(\lambda)
++
+negl(\lambda).
+\end{equation}
+
+Accordingly, BVCRSA provides cryptographic unlinkability
+of query-specific node selectors and randomized ABSE query
+tokens across different query epochs. However, repeated or
+overlapping queries may still be correlated through the
+search and access patterns explicitly permitted by
+\(\mathcal L_{BVCRSA}\), including matched canonical-node
+sets, recovered bitmaps, matched record sets, and query
+result cardinalities.
+\hfill\(\square\)
+
+\subsection{Theorem 8: Query-State Freshness and Rollback Resistance}
+
+\textbf{Theorem 8.}
+A malicious cloud cannot successfully replay stale query states or rollback authenticated search results.
+
+\textbf{Proof.}
+
+For every epoch $e$, the blockchain stores the authenticated query state
+
+\begin{equation}
+\begin{aligned}
+State_e = ( & e, Root_e^{idx}, Root_e^{agg}, Root_e^{bmp}, \\
+& Acc_e, ts, \sigma_{DO} ).
+\end{aligned}
+\end{equation}
+
+Before accepting a query result, the user verifies that the returned state corresponds to the latest finalized blockchain epoch.
+
+Suppose the cloud returns a stale state $State_{e'}$ where
+
+\begin{equation}
+e'
+<
+e.
+\end{equation}
+
+The freshness verification immediately detects the existence of a newer finalized epoch and rejects the response.
+
+Furthermore, any modification of
+
+\begin{equation}
+Root_e^{idx},
+\quad
+Root_e^{agg},
+\quad
+Root_e^{bmp}
+\end{equation}
+
+changes
+
+\begin{equation}
+\begin{aligned}
+Acc_e = H \left( & Root_e^{idx} \parallel Root_e^{agg} \parallel Root_e^{bmp} \right),
+\end{aligned}
+\end{equation}
+
+which invalidates the authenticated blockchain state.
+
+Therefore, rollback succeeds only if blockchain finality or the collision resistance of $H(\cdot)$ is broken.
+
+Hence,
+
+\begin{equation}
+Pr[\textsf{Rollback}]
+\le
+Adv_{BC}
++
+Adv_H
++
+negl(\lambda).
+\end{equation}
+
+Thus, BVCRSA achieves query-state freshness and rollback resistance.
+
+
+\section{EVALUATION}
+
+This section evaluates the complexity and performance of BVCRSA. The analysis covers index construction, trapdoor generation, query processing, aggregation, and verification costs. BVCRSA is compared with Trinity~\cite{ref39}, ABSE-Range~\cite{ref40}, Latt-IBEKS~\cite{ref41}, and VC-KASE~\cite{ref44}, which collectively represent state-of-the-art encrypted range search, attribute-based searchable encryption, post-quantum searchable encryption, and verifiable searchable data-sharing frameworks.
+
+
+\subsection{Computation Cost Analysis}
+
+This subsection analyzes the computational complexity of BVCRSA and compares it with representative schemes.The analysis focuses on four fundamental operations: index construction, trapdoor generation, query processing, and result verification. Table~\ref{tab:notation_cost} summarizes the notations used in the complexity analysis, while Table~\ref{tab:complexity_comparison} compares the asymptotic computation costs of the evaluated schemes. 
+
+\begin{table}[t]
+\centering
+\caption{Cost Analysis Notations}
+\label{tab:notation_cost}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Description} \\
+\midrule
+
+$N$ & Number of outsourced records (bitmap length) \\
+$d$ & Number of queried dimensions \\
+$m$ & Number of keyword fields per document (VC-KASE) \\
+$m_c$ & Number of canonical interval nodes generated by a query \\
+$|D_j|$ & Domain size of searchable dimension $D_j$ \\
+$|U_Q|$ & Number of matched canonical nodes \\
+$|R_Q|$ & Number of records satisfying the conjunctive query \\
+$k$ & Number of user attributes \\
+$w$ & Machine-word size for bitmap operations \\
+
+$\omega$ & Hilbert-encoded prefix length (Trinity) \\
+$c$ & Update counter (Trinity) \\
+
+$L$ & Range-encoding length (Scheme~\cite{ref41}) \\
+$n_{\mathrm{lat}}$ & Lattice dimension parameter \\
+$m_{\mathrm{lat}}$ & Lattice matrix-width parameter \\
+
+$|W|$ & Number of encrypted keywords \\
+$|S|$ & User attribute-set size \\
+$|M|$ & Search-policy matrix size \\
+
+$G_0$ & Exponentiation in group $G_0$ \\
+$G_T$ & Multiplication/exponentiation in group $G_T$ \\
+$P$ & Bilinear pairing operation \\
+
+$T_{\mathrm{h}}$ & Cryptographic hash computation \\
+$T_{\mathrm{pair}}$ & Bilinear pairing operation \\
+$T_{\mathrm{exp}}$ & Modular exponentiation operation \\
+$T_{\mathrm{AHE}}$ & Threshold EC-ElGamal homomorphic operation \\
+$T_{\mathrm{Merkle}}$ & Merkle-proof verification \\
+$T_{\mathrm{BC}}$ & Blockchain-state verification \\
+$T_{\mathrm{Sample}}$ & Lattice sampling operation \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table*}[t]
+\centering
+\caption{Comparison of Computational Complexity}
+\label{tab:complexity_comparison}
+\renewcommand{\arraystretch}{1.25}
+\footnotesize
+\begin{tabular}{p{2.3cm}p{3.2cm}p{3.0cm}p{3.5cm}p{2.5cm}}
+\toprule
+\textbf{Scheme} &
+\textbf{Index Construction} &
+\textbf{Trapdoor Generation} &
+\textbf{Query Processing} &
+\textbf{Verification} \\
+\midrule
+
+Trinity~\cite{ref39} &
+$O(N\omega)$ &
+$O(km+\log c)$ &
+$O(km\log m+\log c)$ &
+$O(|R_Q|)$ \\
+
+Scheme~\cite{ref40} &
+$(1+2|N|+3|W|)G_0 + P$ &
+$(2+2|S|+2|M|)G_0$ &
+$(2|N|+2|M|)P + (1+|N|)G_T$ &
+N/A \\
+
+Scheme~\cite{ref41} &
+$O(Ln_{\mathrm{lat}}^{2}m_{\mathrm{lat}})$ &
+$O(LT_{\mathrm{Sample}})$ &
+$O(Ln_{\mathrm{lat}}^{2}m_{\mathrm{lat}})$ &
+N/A \\
+
+VC-KASE~\cite{ref44} &
+$O(NmT_{\mathrm{exp}})$ &
+$O(dT_{\mathrm{h}}+T_{\mathrm{exp}})$ &
+$O(NT_{\mathrm{pair}})$ &
+$O(T_{\mathrm{pair}})$ \\
+
+BVCRSA (Ours)
+&
+$O(N\log N)$
+&
+$O(m_c+k)$
+&
+$\displaystyle
+O\!\left(
+\substack{
+\sum_{j=1}^{d}\log |D_j|
+\\
++
+\frac{N}{w}(|\mathcal U_Q|+d)
++
+|\mathcal R_Q|
+}
+\right)$
+&
+$O(|\mathcal U_Q|)$
+\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+As presented in Table~\ref{tab:complexity_comparison},
+Scheme~\cite{ref38} and Trinity~\cite{ref39} support
+efficient range-query processing through specialized
+indexing structures; however, neither provides result
+verification or encrypted aggregation.
+Scheme~\cite{ref40} enables attribute-based range search,
+but its trapdoor generation and query processing scale with
+the number of searchable attributes and pairing operations.
+Scheme~\cite{ref41} achieves post-quantum security using
+lattice-based constructions, but incurs substantially higher
+trapdoor-generation and search costs due to lattice sampling
+and matrix computations. VC-KASE~\cite{ref44} supports
+verifiable conjunctive keyword search with aggregate-key
+authorization; however, its search complexity remains linear
+in the number of outsourced documents \(N\) because each
+candidate ciphertext must be individually tested.
+
+In BVCRSA, the authenticated hierarchical range-cover index
+is constructed once during data outsourcing, requiring
+\(O(N\log N)\) time. For a query over \(d\) dimensions,
+each queried interval is first decomposed into
+\(m_c\) canonical nodes, where
+\(m_c=O(\sum_{j=1}^{d}\log|D_j|)\).
+Accordingly, trapdoor generation requires
+\(O(m_c+k)\), where \(k\) denotes the number of user
+attributes. During query processing, ABSE matching is
+performed only for the canonical nodes, followed by
+word-parallel bitmap intersections with complexity
+\(O(\frac{N}{w}(|\mathcal U_Q|+d))\), where
+\(|\mathcal U_Q|\) is the number of matched canonical nodes
+and \(w\) is the machine-word size. The resulting
+conjunctive bitmap identifies the matched record set
+\(\mathcal R_Q\), over which homomorphic aggregation
+requires \(O(|\mathcal R_Q|)\). Finally, verification
+consists of Merkle-proof validation for the matched
+canonical nodes, requiring \(O(|\mathcal U_Q|)\), together
+with constant-time blockchain-state verification.
+
+Consequently, the overall query complexity is dominated by
+canonical-node decomposition, bitmap processing, and
+aggregation over the matched records, rather than a linear
+scan of all outsourced ciphertexts. This enables BVCRSA to
+efficiently integrate logarithmic range decomposition,
+bitmap-based conjunctive evaluation, encrypted aggregation,
+and authenticated query verification within a unified
+framework for large-scale outsourced IIoT analytics.
+
+\subsection{Communication Cost Analysis}
+
+Table~\ref{tab:communication_cost} compares the communication
+overhead of representative schemes during query submission
+and response transmission.
+
+\begin{table*}[!t]
+\caption{Communication Cost Comparison}
+\label{tab:communication_cost}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Scheme} &
+\textbf{Request Communication} &
+\textbf{Response Communication} \\
+\midrule
+
+Ref.~\cite{ref39}
+&
+--
+&
+$O\!\left(
+k\lambda m_{\mathrm{Tri}}\log m_{\mathrm{Tri}}
++\lambda\log c
+\right)^{\dagger}$
+\\
+
+Ref.~\cite{ref40}
+&
+$(2+2|\mathcal S|+|\mathcal M|)|G_0|$
+&
+$r(|G_0|+|G_T|)$
+\\
+
+Ref.~\cite{ref41}
+&
+$(4m_{\mathrm{lat}}+2)|\mathbb Z_q|$
+&
+$2rL(2m_{\mathrm{lat}}+1)|\mathbb Z_q|$
+\\
+
+Ref.~\cite{ref44}
+&
+$4|G|+\ell\kappa$
+&
+$r|CT|+|Sig_{agg}|$
+\\
+
+\textbf{BVCRSA}
+&
+$m_c(|Tok|+|G|+\lambda)$
+&
+$|CT_{sum}|+|CT_{count}|
++|B_Q|
++|\mathcal U_Q|\lambda\log n_e$
+\\
+
+\bottomrule
+\end{tabular}
+
+\vspace{1mm}
+\footnotesize
+$^{\dagger}$Ref.~\cite{ref39} reports only the total search
+communication complexity and does not separately analyze
+request and response communication.
+\end{table*}
+
+Here,
+\(m_c\) denotes the total number of canonical nodes generated
+by the range-cover decomposition,
+\(r\) denotes the number of matched ciphertexts,
+\(|\mathcal U_Q|\) is the number of matched canonical nodes,
+\(n_e\) is the number of authenticated leaves in the Merkle
+tree, and
+\(\lambda\) is the hash-output length.
+Moreover,
+\(|Tok|\),
+\(|CT|\),
+\(|CT_{sum}|\),
+\(|CT_{count}|\),
+\(|Sig_{agg}|\),
+and
+\(|B_Q|\)
+represent the sizes of an ABSE query token, searchable
+ciphertext, aggregate-sum ciphertext, aggregate-count
+ciphertext, aggregate signature, and conjunctive bitmap,
+respectively.
+
+As shown in Table~\ref{tab:communication_cost},
+Ref.~\cite{ref39} reports only the overall search
+communication cost, which grows with the number of encoded
+queries and quotient-filter entries. Ref.~\cite{ref40}
+constructs an attribute-dependent trapdoor whose size is
+determined by the underlying LSSS access structure and
+returns one encrypted response for each matched record.
+The lattice-based scheme in Ref.~\cite{ref41} incurs the
+largest communication overhead because both the trapdoor and
+each returned ciphertext comprise multiple lattice vectors.
+Although Ref.~\cite{ref44} employs a compact conjunctive
+trapdoor and a constant-size aggregate signature, the cloud
+must still transmit all matched ciphertexts, resulting in
+response communication that grows linearly with the number
+of matched records.
+
+In BVCRSA, a query interval is first decomposed into
+\(m_c\) canonical nodes. Accordingly, the request contains
+one ABSE token and one bitmap selector for each canonical
+node, yielding a request communication cost of
+\(O(m_c)\). During query execution, bitmap intersections are
+performed entirely at the cloud, and only the final
+aggregation result is returned. Specifically, the response
+consists of two aggregate ciphertexts, one conjunctive
+bitmap, authenticated commitments, and Merkle proofs for the
+matched canonical nodes, resulting in
+\(O(|B_Q|+|\mathcal U_Q|\log n_e)\) communication in
+addition to two constant-size aggregate ciphertexts.
+Unlike existing schemes that return all matched encrypted
+records, the response size of BVCRSA is independent of the
+number of matched ciphertexts for aggregation queries.
+Consequently, BVCRSA achieves communication-efficient
+encrypted aggregation while preserving authenticated
+query-state verification.
+
+
+
+\subsection{Storage Overhead Analysis}
+
+BVCRSA stores encrypted sensor records, authenticated
+range-cover indexes, protected bitmaps, aggregation
+ciphertexts, and blockchain commitments. Let $N$ denote the
+number of outsourced records and $m_c$ the total number of
+canonical interval nodes. The encrypted sensor records incur
+$O(N)$ storage, while the authenticated range-cover index
+requires $O(m_c)$ searchable-node ciphertexts and Merkle-tree
+leaf commitments. Protected bitmaps require
+$O(m_cN)$ bits because each canonical node maintains a
+fixed-length bitmap over the indexed record space.
+Aggregation metadata require one EC-ElGamal ciphertext per
+record, yielding $O(N)$ additional storage. Finally, the
+blockchain stores only compact epoch-level commitments
+consisting of authenticated Merkle roots and signatures,
+resulting in $O(E)$ on-chain storage for $E$ finalized
+epochs. Consequently, the storage overhead is dominated by
+the bitmap index, while blockchain storage remains
+independent of the outsourced dataset size.
+\subsection{Performance Evaluation}
+
+We evaluate BVCRSA in terms of efficiency, scalability,
+privacy-preserving aggregation, and authenticated
+verification over large-scale outsourced IIoT data. The
+evaluation considers four aspects: (i) searchable-index
+construction, (ii) trapdoor generation and conjunctive range
+query processing, (iii) encrypted aggregation, and (iv)
+blockchain-based query-state verification.
+
+BVCRSA is compared with representative searchable
+encryption and range-query schemes, including
+Scheme~\cite{ref38}, Trinity~\cite{ref39},
+ABSE-Range~\cite{ref40}, Latt-IBEKS~\cite{ref41}, and
+VC-KASE~\cite{ref44}. Since no existing scheme simultaneously supports
+attribute-based searchable encryption, conjunctive range
+queries, encrypted aggregation, authenticated
+blockchain-backed verification, and threshold aggregate
+decryption, only the functionalities shared by the
+compared schemes (e.g., index construction, trapdoor
+generation, query processing, and verification) are
+evaluated comparatively. The encrypted aggregation
+capability of BVCRSA, which is unsupported by the
+baseline schemes, is evaluated separately through a
+dedicated experiment. The threshold aggregate-decryption
+cost is excluded from the comparative evaluation because
+it is a post-processing operation not provided by the
+baseline schemes.
+
+\subsubsection*{\textbf{Experimental Setup}}
+
+A BVCRSA prototype was implemented in Python~3.12.
+The cryptographic components were simulated using
+well-established cryptographic libraries to provide a
+consistent evaluation environment. Attribute-based
+searchable encryption was realized using BN128 bilinear
+pairings via the \texttt{py\_ecc} library, while Threshold
+EC-ElGamal homomorphic encryption was implemented over the
+NIST P-256 elliptic curve. AES-GCM encryption was provided
+by \texttt{PyCryptodome}, whereas SHA-256 and HMAC were
+implemented using Python's native cryptographic libraries.
+Ethereum smart contracts, developed in Solidity and
+accessed through \texttt{Web3.py}, were used for
+blockchain-anchored query-state verification. All baseline
+schemes were reimplemented according to their original
+algorithms and evaluated on the same hardware platform,
+software environment, cryptographic libraries, and
+comparable security settings whenever applicable to ensure
+a fair comparison.
+
+Experiments were conducted in a heterogeneous IIoT
+environment consisting of a Raspberry Pi~4 Model~B (4~GB
+RAM) for sensor-side operations, an Intel Core~i7 laptop
+(16~GB RAM) for trapdoor generation, and an Intel Xeon
+server (32~GB RAM, Ubuntu~22.04~LTS) for index
+construction, query processing, aggregation, and
+verification.
+
+Synthetic IIoT records of the form
+\(D=(m,k,t,v)\) were generated using 20 sensor categories,
+with numerical values uniformly distributed over
+\([0,100]\). The dataset size ranged from
+\(10^3\) to \(2\times10^4\) records. Performance was
+evaluated with respect to database size
+(\(N=10^3\)--\(2\times10^4\)), query selectivity
+(10\%--80\%), and the number of queried dimensions
+(\(d=1\)--5). Measured metrics included index-construction
+time, trapdoor-generation latency, query-processing time,
+verification overhead, aggregation overhead, and storage
+overhead. Unless otherwise specified, each reported result
+represents the average of 20 independent runs under the
+same configuration. Owing to the deterministic nature of
+the evaluated cryptographic operations, the observed
+variance was small; therefore, only average results are
+reported for clarity.
+
+\subsubsection{\textbf{Index Construction Time}}
+
+This experiment evaluates the preprocessing overhead required to construct searchable indexes before outsourcing. The database size is varied from $1{,}000$ to $20{,}000$ records, while the number of searchable dimensions and access-policy size are fixed. Index-construction time includes encrypted node-tag generation, bitmap-commitment construction, aggregation-metadata initialization, and Merkle-root computation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_index_construction.png}
+\caption{Index-construction time versus database size.}
+\label{fig:index_construction}
+\end{figure}
+
+Figure~\ref{fig:index_construction} compares the index-construction overhead of BVCRSA with Trinity~\cite{ref39}, ABSE-Range~\cite{ref40}, Latt-IBEKS~\cite{ref41}, and VC-KASE~\cite{ref44}. As the database size increases, all schemes incur higher preprocessing costs due to the growing number of searchable index entries. Among the evaluated schemes, VC-KASE achieves the lowest index-construction cost because it maintains a relatively lightweight keyword-based indexing structure. BVCRSA incurs slightly higher overhead owing to the construction of authenticated range-cover nodes, protected bitmap commitments, encrypted aggregation metadata, and Merkle-based verification structures. Nevertheless, these operations are performed only once during data outsourcing and therefore do not affect online query execution. Compared with Trinity and Latt-IBEKS, BVCRSA exhibits substantially lower preprocessing overhead because its index construction primarily relies on efficient hash computations, PRF evaluations, and incremental EC-ElGamal aggregation updates rather than expensive multidimensional encryption or lattice-based operations. 
+
+\subsubsection{\textbf{Trapdoor Generation Time}}
+
+This experiment evaluates the client-side overhead of trapdoor generation. The number of queried dimensions is varied from 1 to 5 while the database size is fixed at $N=10{,}000$ records. Trapdoor-generation time is measured as the elapsed time required to construct a valid search trapdoor before query submission.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_trapdoor_generation.png}
+\caption{Trapdoor-generation time versus number of queried dimensions.}
+\label{fig:trapdoor_generation}
+\end{figure}
+
+Figure~\ref{fig:trapdoor_generation} compares the trapdoor-generation overhead of BVCRSA with Trinity~\cite{ref39}, ABSE-Range~\cite{ref40}, Latt-IBEKS~\cite{ref41}, and VC-KASE~\cite{ref44}. As the number of queried dimensions increases, all schemes incur additional cost due to the need to encode more query predicates.
+
+BVCRSA exhibits only a modest increase in latency, from approximately $0.9$~ms to $2.2$~ms when the number of queried dimensions increases from 1 to 5. This efficiency arises from canonical interval decomposition combined with lightweight hash, PRF, and attribute-bound token-generation operations. Since each dimension contributes only a logarithmic number of interval nodes, the trapdoor cost scales gradually with query complexity.
+
+In contrast, Trinity~\cite{ref39}, ABSE-Range~\cite{ref40}, Latt-IBEKS~\cite{ref41}, and VC-KASE~\cite{ref44} incur higher overhead due to additional cryptographic operations during token construction. Overall, the results demonstrate that BVCRSA generates compact and efficient trapdoors while preserving query privacy and fine-grained access control, making it well suited for multidimensional encrypted range queries in large-scale IIoT environments.
+
+
+
+
+
+\subsubsection{\textbf{Query Processing Time}}
+
+Query-processing latency is a critical performance metric for outsourced searchable-encryption systems because it directly determines the responsiveness of encrypted data retrieval and analytics. This experiment evaluates the query-processing performance of BVCRSA under varying query selectivities, database sizes, and numbers of queried dimensions. The reported query-processing time includes encrypted search, bitmap filtering, and homomorphic aggregation, but excludes network communication and blockchain-access latency to isolate the efficiency of the search framework itself.
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_query_vs_range.png}
+\caption{Query processing time versus range-query width.}
+\label{fig:query_vs_range}
+\end{figure}
+
+Figure~\ref{fig:query_vs_range} evaluates the impact of range-query width on search performance. As the queried interval expands from $10\%$ to $80\%$ of the searchable domain, BVCRSA maintains consistently low query-processing latency, increasing only from approximately $0.04$~ms to $0.20$~ms. In contrast, VC-KASE~\cite{ref44} and Latt-IBEKS~\cite{ref41} require approximately $1$~ms, while ABSE-Range~\cite{ref40} and Trinity~\cite{ref39} incur substantially higher costs of approximately $40$~ms and $90$~ms, respectively. This result indicates that the hierarchical range-cover decomposition effectively limits the number of interval nodes processed during query evaluation, thereby reducing the impact of wider query ranges on search latency.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_query_vs_N.png}
+\caption{Query processing time versus database size.}
+\label{fig:query_vs_database}
+\end{figure}
+
+Figure~\ref{fig:query_vs_database} illustrates the scalability of query processing as the number of outsourced records increases from $1{,}000$ to $20{,}000$. BVCRSA consistently achieves the lowest query-processing latency, growing modestly from approximately $0.02$~ms to $0.45$~ms. In comparison, Trinity~\cite{ref39} and ABSE-Range~\cite{ref40} exhibit significantly higher latency, reaching approximately $180$~ms and $80$~ms, respectively, at the largest dataset size. Although Latt-IBEKS~\cite{ref41} and VC-KASE~\cite{ref44} perform better than Trinity and ABSE-Range, their query times still exceed $2$~ms. The superior scalability of BVCRSA stems from its authenticated range-cover index and conjunctive bitmap-filtering mechanism, which enable direct identification of candidate intervals without extensive ciphertext scanning.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_query_vs_d_conjunctive.png}
+\caption{Query processing time versus number of queried dimensions.}
+\label{fig:query_vs_dimension}
+\end{figure}
+
+Figure~\ref{fig:query_vs_dimension} examines the scalability of conjunctive multidimensional queries by varying the number of queried dimensions from 1 to 5. BVCRSA exhibits only a gradual increase in query-processing latency, from approximately $0.04$~ms to $0.25$~ms. Although Latt-IBEKS~\cite{ref41} and VC-KASE~\cite{ref44} maintain relatively stable performance across dimensions, their query-processing costs remain substantially higher at approximately $18$--$20$~ms and $3$~ms, respectively. This demonstrates that BVCRSA efficiently supports multidimensional range queries through dimension-level bitmap intersections, allowing conjunctive query evaluation with minimal additional overhead.
+
+Overall, the results demonstrate that the combination of authenticated range-cover indexing and conjunctive bitmap filtering substantially reduces search overhead, enabling scalable and efficient multidimensional range-query processing for large-scale outsourced IIoT environments.
+
+\subsubsection{\textbf{Query Throughput}}
+
+This experiment evaluates the throughput of encrypted query processing to assess the efficiency of BVCRSA under increasing query workloads. The dataset size is fixed at $N=10{,}000$ records, while the number of submitted query requests varies from $100$ to $10{,}000$. Throughput is measured as
+
+\[
+\mathrm{Throughput}
+=
+\frac{Q_{\mathrm{completed}}}
+     {T_{\mathrm{total}}},
+\]
+
+where $Q_{\mathrm{completed}}$ denotes the number of successfully processed queries and $T_{\mathrm{total}}$ denotes the total execution time.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_query_throughput_matched_colors.png}
+\caption{Query throughput under increasing query workload.}
+\label{fig:query_throughput}
+\end{figure}
+
+Figure~\ref{fig:query_throughput} compares the query throughput of BVCRSA with Trinity~\cite{ref39}, ABSE-Range~\cite{ref40}, Latt-IBEKS~\cite{ref41}, and VC-KASE~\cite{ref44}. BVCRSA consistently achieves the highest throughput across all workload sizes, significantly outperforming the baseline schemes. This improvement is attributed to the authenticated range-cover index and conjunctive bitmap-filtering mechanism, which enable efficient identification of matching records without extensive ciphertext scanning. In contrast, Trinity~\cite{ref39} and ABSE-Range~\cite{ref40} experience substantially lower throughput due to increasing index-traversal and cryptographic matching overhead as the workload grows. Latt-IBEKS~\cite{ref41} and VC-KASE~\cite{ref44} achieve higher throughput than Trinity and ABSE-Range but remain constrained by lattice-based computations and pairing-based ciphertext testing, respectively.
+
+Overall, the results demonstrate that BVCRSA sustains high query throughput under increasing workloads while maintaining low query latency. The combination of authenticated indexing and compact trapdoor evaluation makes BVCRSA well suited for large-scale IIoT environments where multiple users and applications continuously issue encrypted range queries.
+
+\subsubsection{\textbf{Verification Overhead}}
+
+This experiment evaluates the cost of verifying search-query results. The number of returned results is varied from $50$ to $500$, while the database size and query parameters remain fixed. The comparison includes BVCRSA, Trinity~\cite{ref39}, and VC-KASE~\cite{ref44}, since these schemes provide explicit result-verification mechanisms. 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_verification_overhead.png}
+\caption{Verification time versus number of returned results.}
+\label{fig:verification_overhead}
+\end{figure}
+
+Figure~\ref{fig:verification_overhead} compares the verification overhead of BVCRSA, Trinity~\cite{ref39}, and VC-KASE~\cite{ref44} under varying result-set sizes. BVCRSA consistently achieves the lowest verification latency, increasing only from approximately $0.25$~ms to $1.65$~ms as the number of returned results grows from $50$ to $500$. This behavior is consistent with the proposed verification design, where lightweight Merkle-proof validation scales with the number of matched results while blockchain-root verification incurs only a constant overhead. In contrast, Trinity~\cite{ref39} exhibits a substantially higher and nearly linear increase in verification cost because its verification process requires validating authentication information associated with each returned result. VC-KASE~\cite{ref44} maintains an almost constant verification latency since verification is dominated by a fixed number of pairing-based operations. However, its verification cost remains consistently higher than that of BVCRSA due to the computational expense of bilinear pairings.
+
+\subsubsection{\textbf{Effect of Homomorphic Aggregation}}
+
+This experiment evaluates the scalability benefit of the proposed bitmap-constrained homomorphic aggregation mechanism. The number of matched records is varied from 100 to 500 while the query configuration remains fixed. We compare the full BVCRSA framework against a Naive baseline that returns all matched encrypted records to the user without performing in-network aggregation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_ablation_aggregation.png}
+\caption{Effect of homomorphic aggregation versus naive record retrieval.}
+\label{fig:ablation_aggregation}
+\end{figure}
+
+Figure~\ref{fig:ablation_aggregation} shows that the Naive approach incurs rapidly increasing latency as the number of matched records grows because all encrypted records must be transmitted and subsequently processed by the user. The execution time increases from approximately 180~ms to nearly 900~ms when the number of matched records reaches 500.
+
+In contrast, BVCRSA performs aggregation directly over encrypted metadata maintained within the authenticated range-cover structure. Consequently, only compact aggregated ciphertexts and verification proofs are returned, substantially reducing communication and processing overhead. As a result, the execution time remains below 20~ms across all tested workloads and exhibits only a modest increase as the match volume grows.
+
+These results demonstrate that the proposed homomorphic aggregation mechanism significantly improves query scalability while preserving data confidentiality and verifiability, making BVCRSA suitable for large-scale IIoT analytics workloads.
+
+\subsubsection{\textbf{Aggregate-Recovery Scalability}}
+
+This experiment evaluates the scalability of recovering
+aggregate plaintexts using the Baby-Step Giant-Step (BSGS)
+algorithm employed in the Threshold EC-ElGamal decryption
+process. Since BSGS has
+\(O(\sqrt{M_{\max}})\)
+time complexity, where \(M_{\max}\) denotes the configured
+maximum aggregate value, the recovery latency is expected to
+increase sublinearly with the supported aggregation range.
+
+The aggregate bound was varied from
+\(10^{3}\) to \(10^{7}\), with each result averaged over
+20 independent runs. As a baseline, we evaluated a
+traditional EC-ElGamal implementation that recovers the
+plaintext through naive linear search.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{bsgs_scalability.png}
+\caption{Aggregate-recovery latency versus maximum
+supported aggregate value.}
+\label{fig:bsgs}
+\end{figure}
+
+Fig.~\ref{fig:bsgs} shows that the recovery latency of
+BVCRSA increases gradually with the configured aggregate
+bound, following the expected
+\(O(\sqrt{M_{\max}})\)
+behavior. In contrast, the traditional linear-search
+baseline grows approximately linearly with the plaintext
+domain, resulting in substantially higher recovery latency
+as the aggregation range increases.
+
+For the evaluated IIoT workload, the maximum possible
+aggregate sum is
+\(2\times10^{6}\),
+which remains well within the configured BSGS search space.
+Therefore, aggregate recovery incurs only a small fraction
+of the overall query-processing time, demonstrating that
+lifted Threshold EC-ElGamal remains practical for
+large-scale IIoT monitoring applications.
+
+\section{Conclusion}
+
+This paper presented \textbf{BVCRSA}, a blockchain-based
+framework for verifiable conjunctive range search and
+aggregation over encrypted IIoT data. BVCRSA integrates
+attribute-based searchable encryption, authenticated
+hierarchical range-cover indexing, protected bitmap
+filtering, Threshold EC-ElGamal homomorphic aggregation, and
+blockchain-anchored query-state verification into a unified
+architecture. Unlike existing searchable encryption schemes
+that primarily support secure retrieval, BVCRSA enables
+fine-grained access control, conjunctive multi-range search,
+privacy-preserving aggregation, threshold aggregate
+decryption, and verifiable query processing within a single
+framework. Experimental results
+demonstrated efficient trapdoor generation, practical
+bitmap-based query processing, low verification overhead,
+and scalable index construction while providing integrated
+aggregation and verifiable analytics beyond the capabilities
+of representative searchable range-query schemes. Future work will investigate efficient user and attribute revocation, dynamic index updates, large-scale evaluation using real-world IIoT datasets, end-to-end performance analysis incorporating network communication and blockchain latency, distributed or partially trusted key management, edge-assisted query processing, and post-quantum cryptographic primitives to further enhance the scalability, deployment practicality, and long-term security of BVCRSA.
+
+
+\begin{thebibliography}{00}
+\bibitem{ref1} M. Wollschlaeger, T. Sauter, and J. Jasperneite, ``The Future of Industrial Communication: Automation Networks in the Era of the Internet of Things and Industry 4.0,'' \emph{IEEE Industrial Electronics Magazine}, vol. 14, no. 3, pp. 6--16, Sept. 2020.
+
+\bibitem{ref2} S. Li, L. Da Xu, and S. Zhao, ``The Internet of Things: A Survey,'' \emph{Information Systems Frontiers}, vol. 23, no. 2, pp. 243--259, Apr. 2021.
+
+\bibitem{ref3} S. Kamara, C. Papamanthou, and T. Roeder, ``Dynamic Searchable Symmetric Encryption,'' in \emph{Proc. ACM CCS}, 2020, pp. 965--982.
+
+\bibitem{ref4} C. Wang, N. Cao, K. Ren, and W. Lou, ``Enabling Secure and Efficient Ranked Keyword Search over Outsourced Cloud Data,'' \emph{IEEE Transactions on Parallel and Distributed Systems}, vol. 23, no. 8, pp. 1467--1479, Aug. 2020.
+
+\bibitem{ref5} H. Yin, W. Zhang, H. Deng, Z. Qin, and K. Li, ``An Attribute-Based Searchable Encryption Scheme for Cloud-Assisted Industrial Internet of Things,'' \emph{IEEE Internet of Things Journal}, vol. 10, no. 12, pp. 11014--11023, Jun. 2023.
+
+\bibitem{ref6} X. Liu \textit{et al}., "An Efficient Supply–Demand-Aligned and Trustworthy MultiKeyword Search Scheme in Edge-Assisted IoT Environments," in \textit{IEEE Internet of Things Journal}, vol. 12, no. 18, pp. 38427-38439, 15 Sept.15, 2025. 
+
+\bibitem{ref7} S. Fugkeaw, L. Hak and T. Theeramunkong, "Achieving Secure, Verifiable, and Efficient Boolean Keyword Searchable Encryption for Cloud Data Warehouse," in IEEE Access, vol. 12, pp. 49848-49864, 2024, doi: 10.1109/ACCESS.2024.3383320.
+
+\bibitem{ref8} W. Sun, W. Lou, Y. T. Hou, and H. Li, ``Protecting Your Right: Attribute-Based Keyword Search With Fine-Grained Owner-Enforced Search Authorization in the Cloud,'' \emph{IEEE Transactions on Parallel and Distributed Systems}, vol. 27, no. 4, pp. 1187--1198, Apr. 2016.
+
+\bibitem{ref9} Y. Miao, J. Ma, Q. Jiang, X. Liu, and X. Li, ``Attribute-Based Search Over Hierarchical Data in Cloud Computing,'' \emph{IEEE Transactions on Services Computing}, vol. 13, no. 6, pp. 985--998, Nov.--Dec. 2020.
+
+\bibitem{ref10} 
+P. Liu, Q. He, Y. Chen, and S. Jiang, ``Efficient Multikeyword Searchable and Verifiable Data Sharing for Cloud-Edge Collaboration Intelligent Transportation Systems,'' \emph{IEEE Transactions on Intelligent Transportation Systems}, vol. 24, no. 11, pp. 12170--12182, Nov. 2023.
+
+\bibitem{ref11} J. Liu, Y. Li, R. Sun, Q. Pei, N. Zhang, M. Dong, and V. Leung, ``EMK-ABSE: Efficient Multikeyword Attribute-Based Searchable Encryption Scheme Through Cloud-Edge Coordination,'' \emph{IEEE Internet of Things Journal}, vol. 9, no. 19, pp. 19412--19426, Oct. 2022.
+
+\bibitem{ref12} M. Ihtesham et al., "Privacy Preserving and Serverless Homomorphic-Based Searchable Encryption as a Service (SEaaS)," in IEEE Access, vol. 11, pp. 115204-115218, 2023, doi: 10.1109/ACCESS.2023.3324817.
+
+\bibitem{ref13} J. Aljabri, A. L. Michala, and J. Singer, ``ELSA: Edge Lightweight Searchable Attribute-Based Encryption Multi-keyword Scalability,'' in \emph{2022 IEEE Conference on Dependable and Secure Computing (DSC)}, Edinburgh, United Kingdom, 2022, pp. 1--4.
+
+\bibitem{ref14} H. Zhang et al., "Non-Interactive DSSE for Medical Data Sharing With Forward and Backward Privacy," in IEEE Transactions on Sustainable Computing, vol. 8, no. 4, pp. 682-693, Oct.-Dec. 2023,
+
+\bibitem{ref15} 
+F. Li, X. Yan, F. Luo, and W. W. Y. Ng, ``Authenticated Attribute-Based Searchable Encryption With Full Policy Hiding over Cloud Encrypted Data,'' \emph{IEEE Transactions on Services Computing}, vol. 15, no. 5, pp. 2933--2945, Sept.-Oct. 2022.
+
+\bibitem{ref16} 
+S. Fugkeaw, K. Tangtanawirut, P. Rattanasrisuk, and A. Changtor, ``MK-WISE: Secure and Efficient Multi-Keyword Wildcard ABSE With Keyword-Level Revocation for Device–Edge–Cloud EHRs Data Sharing,'' \emph{IEEE Systems Journal}, vol. 18, no. 1, pp. 627--638, Mar. 2024.
+
+\bibitem{ref17} 
+K. Zhang, Y. Zhang, Y. Li, X. Liu, and L. Lu, ``A Blockchain-Based Anonymous Attribute-Based Searchable Encryption Scheme for Data Sharing,'' \emph{IEEE Internet of Things Journal}, vol. 8, no. 21, pp. 15993--16004, 1 Nov. 2021.
+
+\bibitem{ref18} 
+Z. Yan and B. Zhang, ``An Efficient Attribute-Based Multikeyword Searchable Encryption With Access Policy Hiding in IoT Using Blockchain,'' \emph{IEEE Systems Journal}, vol. 17, no. 4, pp. 5440--5451, Dec. 2023.
+
+\bibitem{ref19} S. Basudan and A. Alamer, "Efficient Privacy-Preserving Range Query With Leakage Suppressed for Encrypted Data in Cloud-Based Internet of Things," in IEEE Access, vol. 12, pp. 187652-187664, 2024.
+
+\bibitem{ref20} 
+Y. Yang, R. H. Deng, W. Guo, H. Jensen, H. Cheng, X. Luo, and X. Zheng, ``Dual Traceable Distributed Attribute-Based Searchable Encryption and Ownership Transfer,'' \emph{IEEE Transactions on Services Computing}, vol. 15, no. 5, pp. 2795--2809, Sept.-Oct. 2022.
+
+\bibitem{ref21} Y. Wang, S. -F. Sun, J. Wang, J. K. Liu and X. Chen, "Achieving Searchable Encryption Scheme With Search Pattern Hidden," in IEEE Transactions on Services Computing, vol. 15, no. 2, pp. 1012-1025, 1 March-April 2022.
+
+\bibitem{ref22}
+G. Zu, Y. Lu and J. Li, "Comment on an Attribute-Based Searchable Encryption Scheme With Receiver Anonymity," in IEEE Transactions on Services Computing, vol. 17, no. 4, pp. 1875-1876, July-Aug. 2024.
+
+\bibitem{ref23} L. Yang, Y. Yang, D. Niyato, Z. Li, W. Xia and L. Sun, "Dynamic Searchable Symmetric Encryption With Efficient and Complete Access Control for Multi-User Cloud Computing," in IEEE Transactions on Mobile Computing, vol. 25, no. 2, pp. 2825-2842, Feb. 2026.
+
+\bibitem{ref24} C. Li et al., "Blockchain-Based Privacy-Preserving and Accountable Mobile Edge Outsourcing Computing Framework for the Metaverse," in IEEE Transactions on Green Communications and Networking, vol. 9, no. 2, pp. 711-724, June 2025, doi: 10.1109/TGCN.2024.3451513.
+
+\bibitem{ref25} L. Chen, J. Li and J. Li, "Toward Forward and Backward Private Dynamic Searchable Symmetric Encryption Supporting Data Deduplication and Conjunctive Queries," in IEEE Internet of Things Journal, vol. 10, no. 19, pp. 17408-17423, 1 Oct.1, 2023, doi: 10.1109/JIOT.2023.3274390
+
+\bibitem{ref26} S. Han, X. Liu, and J. Li, ``MulRF: A Multi-Dimensional Range Filter for Sublinear Time Range Query Processing,'' \emph{IEEE Transactions on Knowledge and Data Engineering}, vol. 36, no. 11, pp. 6600--6613, Nov. 2024.
+
+\bibitem{ref27} X. Tian and Y. Zhai, ``A Cloud Data Sharing Mechanism Based on Searchable Encryption and Inner Product Function Encryption,'' in \emph{Proc. 2024 9th International Conference on Signal and Image Processing (ICSIP)}, Nanjing, China, 2024, pp. 335--340.
+
+\bibitem{ref28} J. Xu, C. Peng, R. Li, J. Fu, and M. Luo, ``An Efficient Delegatable Order-Revealing Encryption Scheme for Multi-User Range Queries,'' \emph{IEEE Transactions on Cloud Computing}, vol. 13, no. 1, pp. 75--86, Jan.--Mar. 2025.
+
+\bibitem{ref29} Z. Wang et al., ``Towards Privacy-Preserving Range Queries with Secure Learned Spatial Index over Encrypted Data,'' in \emph{Proc. 2025 IEEE 24th International Conference on Trust, Security and Privacy in Computing and Communications (TrustCom)}, Guiyang, China, 2025, pp. 377--388.
+
+\bibitem{ref30} D. Liu, W. Wang, P. Xu, L. T. Yang, B. Luo, and K. Liang, ``d-DSE: Distinct Dynamic Searchable Encryption Resisting Volume Leakage,'' \emph{IEEE Transactions on Dependable and Secure Computing}, 2024.
+
+\bibitem{ref31}X. Kong, L. Chen, Y. Zhu and Y. Mu, "Efficient Public-Key Searchable Encryption Scheme From PSI With Scalable Proxy Servers," in \textit{IEEE Transactions on Services Computing}, vol. 17, no. 6, pp. 3527-3540, Nov.-Dec. 2024, 
+
+\bibitem{ref32} A. Wu et al., ``Efficient Public-Key Searchable Encryption Against Keyword Guessing Attacks,'' \emph{IEEE Transactions on Cloud Computing}, 2024.
+
+\bibitem{ref33} J. Ma \emph{et al.}, ``Efficient Privacy-Preserving Conjunctive Searchable Encryption for Cloud-IOT Healthcare Systems,'' \emph{ACM Transactions on Privacy and Security}, vol. 29, no. 1, pp. 1--27, Nov. 2025.
+
+\bibitem{ref34} Z. Gong, J. Li, Y. Lin, J. Wei and C. Lancine, "Efficient Privacy-Preserving Geographic Keyword Boolean Range Query Over Encrypted Spatial Data," in IEEE Systems Journal, vol. 17, no. 1, pp. 455-466, March 2023.
+
+
+\bibitem{ref35}
+Y. Liang, J. Ma, Y. Miao, Y. Su, and R. H. Deng,
+``Efficient and Privacy-Preserving Encode-Based Range Query Over Encrypted Cloud Data,''
+\emph{IEEE Transactions on Information Forensics and Security},
+vol. 19, pp. 9085--9099, 2024, doi: 10.1109/TIFS.2024.3465928.
+
+\bibitem{ref36}
+F. Liu \emph{et al.},
+``Volume-Hiding Range Searchable Symmetric Encryption for Large-Scale Datasets,''
+\emph{IEEE Transactions on Dependable and Secure Computing},
+vol. 21, no. 4, pp. 3597--3609, Jul.--Aug. 2024,
+doi: 10.1109/TDSC.2023.3335304.
+
+\bibitem{ref37}
+H. Zhang, Y. Zheng, C. Xu, L. Zhu, and J. Wang,
+``Revocable DSSE in Healthcare Systems With Range Query Support,''
+\emph{IEEE Transactions on Big Data},
+vol. 11, no. 5, pp. 2764--2778, Oct. 2025,
+doi: 10.1109/TBDATA.2025.3556636.
+
+\bibitem{ref38}
+F. Tang, X. Zhou, H. Luo, G. Ling, J. Shan, and Y. Xiao,
+``Efficient Privacy-Preserving Multi-Dimensional Range Query for Cloud-Assisted Ehealth Systems,''
+\emph{IEEE Transactions on Services Computing},
+vol. 17, no. 5, pp. 2365--2377, Sept.--Oct. 2024,
+doi: 10.1109/TSC.2024.3436573.
+
+\bibitem{ref39}
+Z. Li \emph{et al.},
+``Trinity: A Scalable and Forward-Secure DSSE for Spatio-Temporal Range Query,''
+\emph{IEEE Transactions on Information Forensics and Security},
+vol. 20, pp. 4769--4782, 2025,
+doi: 10.1109/TIFS.2025.3566552.
+
+\bibitem{ref40} Y. Li, H. Wang, S. Wang, and Y. Ding, ``Attribute-Based Searchable Encryption Scheme Supporting Efficient Range Search in Cloud Computing,'' in \emph{2021 IEEE Conference on Dependable and Secure Computing (DSC)}, 2021.
+
+\bibitem{ref41} Z. Lin, H. Li, X. Chen, M. Xiao and Q. Huang, "Identity-Based Encryption With Disjunctive, Conjunctive and Range Keyword Search From Lattices," in IEEE Transactions on Information Forensics and Security, vol. 19, pp. 8644-8657, 2024, doi: 10.1109/TIFS.2024.3459646.
+
+\bibitem{ref42} 
+T. Wang et al., "An Efficient Verifiable Searchable Encryption Scheme With Aggregating Authorization for Blockchain-Enabled IoT," in IEEE Internet of Things Journal, vol. 9, no. 20, pp. 20666-20680, 15 Oct.15, 2022, doi: 10.1109/JIOT.2022.3175859. 
+
+\bibitem{ref43} 
+M. Li, C. Jia, R. Du and G. Ha, "Efficient Conjunctive Geometric Range Query Over Encrypted Spatial Data With Learned Index," in IEEE Transactions on Computers, vol. 74, no. 12, pp. 3995-4009, Dec. 2025, doi: 10.1109/TC.2025.3604470.
+
+\bibitem{ref44} 
+X. Lu, Z. Cao, X. Dong and J. Shen, "Verifiable Conjunctive Field Keyword Searchable Encryption With Aggregate Keys for E-Health Cloud," in IEEE Internet of Things Journal, vol. 12, no. 22, pp. 46985-46999, 15 Nov.15, 2025, doi: 10.1109/JIOT.2025.3602276.
+
+\bibitem{ref45} 
+M. Perera and S. Fugkeaw, "LV-PQ-ABSE: A Lightweight Verifiable Post-Quantum Attribute-Based Searchable Encryption Scheme with Hybrid Indexing and Provenance-Aware Verification for IoT-Based EHRs," in IEEE Internet of Things Journal, doi: 10.1109/JIOT.2026.3695855. 
+\end{thebibliography}
+\end{document}

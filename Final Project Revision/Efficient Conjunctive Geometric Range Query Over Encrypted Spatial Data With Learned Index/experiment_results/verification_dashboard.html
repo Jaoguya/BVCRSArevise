@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ECGRQ-LI Verification Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+    --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a;
+    --text: #e4e6eb; --muted: #8b8fa3; --green: #22c55e;
+    --red: #ef4444; --blue: #3b82f6; --purple: #a855f7;
+    --green-bg: rgba(34,197,94,0.08); --red-bg: rgba(239,68,68,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); padding:24px; min-height:100vh; }
+.container { max-width:1100px; margin:0 auto; }
+h1 { font-size:28px; font-weight:700; margin-bottom:4px;
+     background:linear-gradient(135deg,#3b82f6,#a855f7);
+     -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.subtitle { color:var(--muted); font-size:14px; margin-bottom:28px; }
+
+.summary { display:flex; gap:16px; margin-bottom:32px; }
+.stat-card { flex:1; background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:20px; text-align:center; }
+.stat-num { font-size:42px; font-weight:700; }
+.stat-num.green { color:var(--green); }
+.stat-num.red { color:var(--red); }
+.stat-num.blue { color:var(--blue); }
+.stat-label { color:var(--muted); font-size:13px; margin-top:4px; text-transform:uppercase; letter-spacing:1px; }
+
+.test-card { background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:20px; margin-bottom:16px;
+    transition:border-color 0.2s; }
+.test-card:hover { border-color:#3b82f6; }
+.test-card.pass { border-left:4px solid var(--green); }
+.test-card.fail { border-left:4px solid var(--red); }
+.test-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.test-icon { font-size:22px; }
+.test-name { font-size:17px; font-weight:600; flex:1; }
+.test-badge { font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; letter-spacing:0.5px; }
+.badge-pass { background:var(--green-bg); color:var(--green); }
+.badge-fail { background:var(--red-bg); color:var(--red); }
+.test-desc { color:var(--muted); font-size:13px; margin-bottom:12px; }
+.test-details { display:flex; flex-wrap:wrap; gap:6px 16px; }
+.detail-row { font-size:12px; display:flex; gap:6px; }
+.detail-key { color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.detail-val { font-family:'JetBrains Mono',monospace; }
+.val-pass { color:var(--green); font-weight:600; }
+.val-fail { color:var(--red); font-weight:600; }
+
+.section-title { font-size:20px; font-weight:700; margin:32px 0 16px;
+    display:flex; align-items:center; gap:8px; }
+.section-title::before { content:''; width:4px; height:24px; border-radius:2px;
+    background:linear-gradient(180deg,#3b82f6,#a855f7); }
+
+table { width:100%; border-collapse:collapse; background:var(--card);
+    border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+th { background:#1e2130; text-align:left; padding:12px 16px; font-size:12px;
+    text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); font-weight:600; }
+td { padding:10px 16px; font-size:13px; border-top:1px solid var(--border); }
+.mono { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+tr.tamper-pass { background:var(--green-bg); }
+tr.tamper-fail { background:var(--red-bg); }
+.tamper-icon { font-size:16px; }
+
+.footer { text-align:center; color:var(--muted); font-size:12px; margin-top:40px; padding:20px 0; border-top:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🔐 ECGRQ-LI Verification Dashboard</h1>
+    <p class="subtitle">Real-time integrity verification of encrypted spatial data in MongoDB Atlas</p>
+
+    <div class="summary">
+        <div class="stat-card"><div class="stat-num blue">6</div><div class="stat-label">Total Tests</div></div>
+        <div class="stat-card"><div class="stat-num green">6</div><div class="stat-label">Passed</div></div>
+        <div class="stat-card"><div class="stat-num red">0</div><div class="stat-label">Failed</div></div>
+    </div>
+
+    <div class="section-title">Test Results</div>
+    
+        <div class="test-card pass">
+            <div class="test-header">
+                <span class="test-icon">✅</span>
+                <span class="test-name">PRF Encryption Verification</span>
+                <span class="test-badge badge-pass">
+                    PASSED
+                </span>
+            </div>
+            <div class="test-desc">Re-compute F(K, Z{p}) from raw data → compare to stored encrypted Z-code</div>
+            <div class="test-details"><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">268</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">25.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">22.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x3c58b8cf8e8e83...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x3c58b8cf8e8e83...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">461</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">98.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">26.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0xde3413c94e3017...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0xde3413c94e3017...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">114</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">81.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">98.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x11e76a09b3ca18c...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x11e76a09b3ca18c...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">537</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">81.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">98.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x11e76a09b3ca18c...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x11e76a09b3ca18c...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">932</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">8.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">76.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x17fffb0a3c9f08c...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x17fffb0a3c9f08c...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">898</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">0.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">37.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x1904f9c2a343443...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x1904f9c2a343443...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">921</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">62.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">72.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x1c66f7273b73f05...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x1c66f7273b73f05...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">37</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">87.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">68.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x27f3c0c82849621...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x27f3c0c82849621...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">167</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">76.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">58.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x2947d5fddb4c902...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x2947d5fddb4c902...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">238</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">15.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">55.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x2a80062bb76cc35...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x2a80062bb76cc35...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">349</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">39.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">47.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x2ac1004f9a17e95...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x2ac1004f9a17e95...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">574</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">63.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">49.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x2ae47e43b808dd6...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x2ae47e43b808dd6...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">119</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">29.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">83.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x31636985095187f...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x31636985095187f...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">512</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">63.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">9.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x341e0d35b29f401...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x341e0d35b29f401...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">96</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">95.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">34.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x3a7d728c760c9e0...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x3a7d728c760c9e0...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">108</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">29.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">77.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x3a93bad84d02e3c...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x3a93bad84d02e3c...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">374</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">52.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">58.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x3ba0aaded37405b...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x3ba0aaded37405b...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">925</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">14.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">76.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x3f0e65720c52341...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x3f0e65720c52341...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">482</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">15.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">20.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x485d22f07297807...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x485d22f07297807...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">945</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">15.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">20.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x485d22f07297807...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x485d22f07297807...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">866</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">8.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">3.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x48b14972dabc479...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x48b14972dabc479...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">13</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">37.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">83.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x5216846f3f4088d...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x5216846f3f4088d...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">166</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">38.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">64.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x554270eb7ba90bb...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x554270eb7ba90bb...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">127</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">93.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">69.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x55c0585dada03bd...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x55c0585dada03bd...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">586</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">100.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">1.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x571f54013c950b7...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x571f54013c950b7...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">802</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">75.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">68.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x5731c495fc78eaa...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x5731c495fc78eaa...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">436</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">10.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">27.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x5c7eaf8fb0bf6b8...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x5c7eaf8fb0bf6b8...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">696</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">19.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">79.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x5e5c46ad5b655d1...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x5e5c46ad5b655d1...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">806</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">51.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">29.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x6b966302ef921ae...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x6b966302ef921ae...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">158</span></div><div class="detail-row"><span class="detail-key">dim1</span><span class="detail-val">86.0</span></div><div class="detail-row"><span class="detail-key">dim2</span><span class="detail-val">50.0</span></div><div class="detail-row"><span class="detail-key">expected_enc_z</span><span class="detail-val">0x732e935f0085c56...</span></div><div class="detail-row"><span class="detail-key">actual_enc_z</span><span class="detail-val">0x732e935f0085c56...</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div></div>
+        </div>
+        <div class="test-card pass">
+            <div class="test-header">
+                <span class="test-icon">✅</span>
+                <span class="test-name">PE Ciphertext Verification</span>
+                <span class="test-badge badge-pass">
+                    PASSED
+                </span>
+            </div>
+            <div class="test-desc">Re-derive keys, re-encrypt with stored nonce → compare ciphertext byte-by-byte</div>
+            <div class="test-details"><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">268</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">461</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">114</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">537</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">932</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">898</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">921</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">37</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">167</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div><div class="detail-row"><span class="detail-key">record_id</span><span class="detail-val">238</span></div><div class="detail-row"><span class="detail-key">vector_length</span><span class="detail-val">35</span></div><div class="detail-row"><span class="detail-key">all_components_match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">mismatch_at</span><span class="detail-val">-1</span></div></div>
+        </div>
+        <div class="test-card pass">
+            <div class="test-header">
+                <span class="test-icon">✅</span>
+                <span class="test-name">Query Correctness</span>
+                <span class="test-badge badge-pass">
+                    PASSED
+                </span>
+            </div>
+            <div class="test-desc">PE.Query with 'sensor_0' token: found 159 records, expected 159 from plaintext</div>
+            <div class="test-details"><div class="detail-row"><span class="detail-key">pe_matched</span><span class="detail-val">159</span></div><div class="detail-row"><span class="detail-key">expected</span><span class="detail-val">159</span></div></div>
+        </div>
+        <div class="test-card pass">
+            <div class="test-header">
+                <span class="test-icon">✅</span>
+                <span class="test-name">Tamper Detection</span>
+                <span class="test-badge badge-pass">
+                    PASSED
+                </span>
+            </div>
+            <div class="test-desc">Modify ciphertext/nonce/key → PE must reject</div>
+            <div class="test-details"><div class="detail-row"><span class="detail-key">label</span><span class="detail-val">Original Data</span></div><div class="detail-row"><span class="detail-key">stored_c</span><span class="detail-val">5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f</span></div><div class="detail-row"><span class="detail-key">computed_c</span><span class="detail-val">5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-pass">True</span></div><div class="detail-row"><span class="detail-key">status</span><span class="detail-val">VALID</span></div><div class="detail-row"><span class="detail-key">label</span><span class="detail-val">Tampered Ciphertext</span></div><div class="detail-row"><span class="detail-key">stored_c</span><span class="detail-val">a405af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f</span></div><div class="detail-row"><span class="detail-key">computed_c</span><span class="detail-val">5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-fail">False</span></div><div class="detail-row"><span class="detail-key">status</span><span class="detail-val">REJECTED (byte[0]: 0x5b→0xa4)</span></div><div class="detail-row"><span class="detail-key">label</span><span class="detail-val">Tampered Nonce</span></div><div class="detail-row"><span class="detail-key">stored_c</span><span class="detail-val">5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f</span></div><div class="detail-row"><span class="detail-key">computed_c</span><span class="detail-val">be19584f8d1a05ff31382fdf758807ed63a96e6e5bd29cf6aa6e1cf449bff4f8</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-fail">False</span></div><div class="detail-row"><span class="detail-key">status</span><span class="detail-val">REJECTED (nonce modified)</span></div><div class="detail-row"><span class="detail-key">label</span><span class="detail-val">Wrong Key</span></div><div class="detail-row"><span class="detail-key">stored_c</span><span class="detail-val">5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f</span></div><div class="detail-row"><span class="detail-key">computed_c</span><span class="detail-val">b41889da39fe304c8534d884c06a383a36c4fe86110b1799096fea98172109a2</span></div><div class="detail-row"><span class="detail-key">match</span><span class="detail-val val-fail">False</span></div><div class="detail-row"><span class="detail-key">status</span><span class="detail-val">REJECTED (MSK: c346a8d4110f2deb...)</span></div></div>
+        </div>
+        <div class="test-card pass">
+            <div class="test-header">
+                <span class="test-icon">✅</span>
+                <span class="test-name">Wrong Key Rejection</span>
+                <span class="test-badge badge-pass">
+                    PASSED
+                </span>
+            </div>
+            <div class="test-desc">Query with wrong MSK → 0 matches out of 50 records</div>
+            <div class="test-details"><div class="detail-row"><span class="detail-key">wrong_matches</span><span class="detail-val">0</span></div><div class="detail-row"><span class="detail-key">tested</span><span class="detail-val">50</span></div></div>
+        </div>
+        <div class="test-card pass">
+            <div class="test-header">
+                <span class="test-icon">✅</span>
+                <span class="test-name">MongoDB Data Reality</span>
+                <span class="test-badge badge-pass">
+                    PASSED
+                </span>
+            </div>
+            <div class="test-desc">Verify encrypted data exists in MongoDB Atlas</div>
+            <div class="test-details"><div class="detail-row"><span class="detail-key">raw_spatial_data</span><span class="detail-val">2600</span></div><div class="detail-row"><span class="detail-key">encrypted_index</span><span class="detail-val">26000</span></div><div class="detail-row"><span class="detail-key">learned_index_models</span><span class="detail-val">50</span></div><div class="detail-row"><span class="detail-key">experiment_results</span><span class="detail-val">5</span></div></div>
+        </div>
+
+    <div class="section-title">Tamper Detection Demo</div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">
+        Record ID: 0 &nbsp;|&nbsp; Keywords: sensor_15, sensor_9, sensor_0 &nbsp;|&nbsp;
+        Testing attribute component at index 32
+    </p>
+    <table>
+        <thead><tr>
+            <th>Scenario</th><th>Stored Ciphertext</th><th>Computed Ciphertext</th>
+            <th>Match?</th><th>Result</th>
+        </tr></thead>
+        <tbody>
+        <tr class="tamper-pass">
+            <td><span class="tamper-icon">✅</span> Original Data</td>
+            <td class="mono">5b05af08f7d30bfc221afc6c...</td>
+            <td class="mono">5b05af08f7d30bfc221afc6c...</td>
+            <td class="val-pass">True</td>
+            <td>VALID</td>
+        </tr>
+        <tr class="tamper-fail">
+            <td><span class="tamper-icon">❌</span> Tampered Ciphertext</td>
+            <td class="mono">a405af08f7d30bfc221afc6c...</td>
+            <td class="mono">5b05af08f7d30bfc221afc6c...</td>
+            <td class="val-fail">False</td>
+            <td>REJECTED (byte[0]: 0x5b→0xa4)</td>
+        </tr>
+        <tr class="tamper-fail">
+            <td><span class="tamper-icon">❌</span> Tampered Nonce</td>
+            <td class="mono">5b05af08f7d30bfc221afc6c...</td>
+            <td class="mono">be19584f8d1a05ff31382fdf...</td>
+            <td class="val-fail">False</td>
+            <td>REJECTED (nonce modified)</td>
+        </tr>
+        <tr class="tamper-fail">
+            <td><span class="tamper-icon">❌</span> Wrong Key</td>
+            <td class="mono">5b05af08f7d30bfc221afc6c...</td>
+            <td class="mono">b41889da39fe304c8534d884...</td>
+            <td class="val-fail">False</td>
+            <td>REJECTED (MSK: c346a8d4110f2deb...)</td>
+        </tr></tbody>
+    </table>
+
+    <div class="footer">
+        ECGRQ-LI &bull; PE: HMAC-SHA256 &bull; PRF: HMAC-SHA256 &bull; PM Learned Index (ε=0.4)
+        &bull; Data stored in MongoDB Atlas
+    </div>
+</div>
+</body>
+</html>

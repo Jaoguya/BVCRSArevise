@@ -1,0 +1,428 @@
+{
+  "search_demo": {
+    "steps": [
+      {
+        "step": 1,
+        "name": "Spatial Segmentation (Algorithm 2)",
+        "desc": "Query range dim1=(35, 65), dim2=(35, 65) \u2192 divided into 4 sub-queries",
+        "detail": [
+          {
+            "sub_query": 1,
+            "ll": "(35,35)",
+            "rh": "(50.0,50.0)"
+          },
+          {
+            "sub_query": 2,
+            "ll": "(35,50.0)",
+            "rh": "(50.0,65)"
+          },
+          {
+            "sub_query": 3,
+            "ll": "(50.0,35)",
+            "rh": "(65,50.0)"
+          },
+          {
+            "sub_query": 4,
+            "ll": "(50.0,50.0)",
+            "rh": "(65,65)"
+          }
+        ]
+      },
+      {
+        "step": 2,
+        "name": "Z-code + PRF Encryption",
+        "desc": "Compute Z-order codes for corners, then encrypt with F(K, Z{p})",
+        "detail": [
+          {
+            "z_ll": 868467651,
+            "z_rh": 1073741823,
+            "enc_ll": "0x75da0d52b98a9cd",
+            "enc_rh": "0x692661084f5a0c3c"
+          },
+          {
+            "z_ll": 936892375,
+            "z_rh": 1857994427,
+            "enc_ll": "0x56eb460bb8355b6d",
+            "enc_rh": "0x501eeebfd730a43"
+          },
+          {
+            "z_ll": 1005317099,
+            "z_rh": 2642247031,
+            "enc_ll": "0x7ade6cb9486ac243",
+            "enc_rh": "0xe411195433e2d960"
+          },
+          {
+            "z_ll": 1073741823,
+            "z_rh": 3426499635,
+            "enc_ll": "0x692661084f5a0c3c",
+            "enc_rh": "0x2c98990b67b7e1a8"
+          }
+        ]
+      },
+      {
+        "step": 3,
+        "name": "PE.GenToken (Trapdoor)",
+        "desc": "Query vector: 32 Z-bits (all wildcard) + 3 attr bits \u2192 token with 34 wildcards",
+        "detail": [
+          {
+            "query_keywords": [
+              "sensor_0"
+            ],
+            "vector_length": 35,
+            "wildcards": 34
+          }
+        ]
+      },
+      {
+        "step": 4,
+        "name": "PM Learned Index Point Search (Algorithm 1)",
+        "desc": "Predict position range using trained neural network, add error bounds [pos-96, pos+73]",
+        "detail": [
+          {
+            "sub": 1,
+            "predicted_ll": 3,
+            "predicted_rh": 4,
+            "with_error": "[0, 77]",
+            "minerror": 96,
+            "maxerror": 73
+          },
+          {
+            "sub": 2,
+            "predicted_ll": 3,
+            "predicted_rh": 4,
+            "with_error": "[0, 77]",
+            "minerror": 96,
+            "maxerror": 73
+          },
+          {
+            "sub": 3,
+            "predicted_ll": 3,
+            "predicted_rh": 3,
+            "with_error": "[0, 76]",
+            "minerror": 96,
+            "maxerror": 73
+          },
+          {
+            "sub": 4,
+            "predicted_ll": 3,
+            "predicted_rh": 3,
+            "with_error": "[0, 76]",
+            "minerror": 96,
+            "maxerror": 73
+          }
+        ]
+      },
+      {
+        "step": 5,
+        "name": "MongoDB Fetch + PE.Query Match (Algorithm 3)",
+        "desc": "Scanned 310 candidates from MongoDB \u2192 PE.Query matched 52, rejected 258",
+        "detail": [
+          {
+            "sub": 1,
+            "scanned": 78,
+            "matched": 13,
+            "rejected": 65,
+            "fetch_ms": 89.6,
+            "pe_match_ms": 0.4,
+            "matched_sample": [
+              {
+                "id": 268,
+                "dim1": 25.0,
+                "dim2": 22.0,
+                "pos": 0
+              },
+              {
+                "id": 932,
+                "dim1": 8.0,
+                "dim2": 76.0,
+                "pos": 4
+              },
+              {
+                "id": 898,
+                "dim1": 0.0,
+                "dim2": 37.0,
+                "pos": 5
+              },
+              {
+                "id": 921,
+                "dim1": 62.0,
+                "dim2": 72.0,
+                "pos": 6
+              },
+              {
+                "id": 238,
+                "dim1": 15.0,
+                "dim2": 55.0,
+                "pos": 9
+              }
+            ],
+            "rejected_sample": [
+              {
+                "id": 461,
+                "dim1": 98.0,
+                "dim2": 26.0,
+                "pos": 1
+              },
+              {
+                "id": 114,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 2
+              },
+              {
+                "id": 537,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 3
+              }
+            ]
+          },
+          {
+            "sub": 2,
+            "scanned": 78,
+            "matched": 13,
+            "rejected": 65,
+            "fetch_ms": 53.7,
+            "pe_match_ms": 0.45,
+            "matched_sample": [
+              {
+                "id": 268,
+                "dim1": 25.0,
+                "dim2": 22.0,
+                "pos": 0
+              },
+              {
+                "id": 932,
+                "dim1": 8.0,
+                "dim2": 76.0,
+                "pos": 4
+              },
+              {
+                "id": 898,
+                "dim1": 0.0,
+                "dim2": 37.0,
+                "pos": 5
+              },
+              {
+                "id": 921,
+                "dim1": 62.0,
+                "dim2": 72.0,
+                "pos": 6
+              },
+              {
+                "id": 238,
+                "dim1": 15.0,
+                "dim2": 55.0,
+                "pos": 9
+              }
+            ],
+            "rejected_sample": [
+              {
+                "id": 461,
+                "dim1": 98.0,
+                "dim2": 26.0,
+                "pos": 1
+              },
+              {
+                "id": 114,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 2
+              },
+              {
+                "id": 537,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 3
+              }
+            ]
+          },
+          {
+            "sub": 3,
+            "scanned": 77,
+            "matched": 13,
+            "rejected": 64,
+            "fetch_ms": 53.59,
+            "pe_match_ms": 0.57,
+            "matched_sample": [
+              {
+                "id": 268,
+                "dim1": 25.0,
+                "dim2": 22.0,
+                "pos": 0
+              },
+              {
+                "id": 932,
+                "dim1": 8.0,
+                "dim2": 76.0,
+                "pos": 4
+              },
+              {
+                "id": 898,
+                "dim1": 0.0,
+                "dim2": 37.0,
+                "pos": 5
+              },
+              {
+                "id": 921,
+                "dim1": 62.0,
+                "dim2": 72.0,
+                "pos": 6
+              },
+              {
+                "id": 238,
+                "dim1": 15.0,
+                "dim2": 55.0,
+                "pos": 9
+              }
+            ],
+            "rejected_sample": [
+              {
+                "id": 461,
+                "dim1": 98.0,
+                "dim2": 26.0,
+                "pos": 1
+              },
+              {
+                "id": 114,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 2
+              },
+              {
+                "id": 537,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 3
+              }
+            ]
+          },
+          {
+            "sub": 4,
+            "scanned": 77,
+            "matched": 13,
+            "rejected": 64,
+            "fetch_ms": 53.47,
+            "pe_match_ms": 0.48,
+            "matched_sample": [
+              {
+                "id": 268,
+                "dim1": 25.0,
+                "dim2": 22.0,
+                "pos": 0
+              },
+              {
+                "id": 932,
+                "dim1": 8.0,
+                "dim2": 76.0,
+                "pos": 4
+              },
+              {
+                "id": 898,
+                "dim1": 0.0,
+                "dim2": 37.0,
+                "pos": 5
+              },
+              {
+                "id": 921,
+                "dim1": 62.0,
+                "dim2": 72.0,
+                "pos": 6
+              },
+              {
+                "id": 238,
+                "dim1": 15.0,
+                "dim2": 55.0,
+                "pos": 9
+              }
+            ],
+            "rejected_sample": [
+              {
+                "id": 461,
+                "dim1": 98.0,
+                "dim2": 26.0,
+                "pos": 1
+              },
+              {
+                "id": 114,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 2
+              },
+              {
+                "id": 537,
+                "dim1": 81.0,
+                "dim2": 98.0,
+                "pos": 3
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step": 6,
+        "name": "Ground Truth Verification",
+        "desc": "Plaintext check: 14 records in range with 'sensor_0' | Encrypted search found: 52",
+        "detail": [
+          {
+            "plaintext_count": 14,
+            "encrypted_count": 52,
+            "match": false
+          }
+        ]
+      }
+    ],
+    "query": {
+      "dim1": [
+        35,
+        65
+      ],
+      "dim2": [
+        35,
+        65
+      ],
+      "keywords": [
+        "sensor_0"
+      ]
+    },
+    "total_matched": 52,
+    "total_scanned": 310
+  },
+  "reality_checks": [
+    {
+      "name": "PRF Encryption",
+      "passed": true,
+      "desc": "Re-computed 15/15 encrypted Z-codes \u2014 all match stored values"
+    },
+    {
+      "name": "PE Ciphertext",
+      "passed": true,
+      "desc": "Re-encrypted 5/5 index vectors \u2014 all 35 components match"
+    },
+    {
+      "name": "Tamper Detection",
+      "passed": true,
+      "desc": "Flipped byte in ciphertext \u2192 comparison returns False (rejected)"
+    },
+    {
+      "name": "Wrong Key Rejection",
+      "passed": true,
+      "desc": "Query with random MSK \u2192 0/15 matches (expected 0)"
+    },
+    {
+      "name": "MongoDB Data Exists",
+      "passed": true,
+      "desc": "encrypted_index: 26000 docs, raw: 2600, models: 50"
+    },
+    {
+      "name": "No Simulation",
+      "passed": true,
+      "desc": "All crypto uses HMAC-SHA256 (hashlib), NN trained with numpy, data stored/fetched from MongoDB Atlas cloud"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

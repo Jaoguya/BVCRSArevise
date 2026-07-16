@@ -1,0 +1,1590 @@
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+9085
+
+Efficient and Privacy-Preserving Encode-Based
+Range Query Over Encrypted Cloud Data
+Yanrong Liang , Jianfeng Ma , Member, IEEE, Yinbin Miao , Member, IEEE,
+Yuan Su , and Robert H. Deng , Fellow, IEEE
+
+Abstract— Privacy-preserving range query, which allows the
+server to implement secure and efficient range query on
+encrypted data, has been widely studied in recent years. Existing
+privacy-preserving range query schemes can realize effective
+range query, but usually suffer from the low efficiency and
+security. In order to solve the above issues, we propose an
+Efficient and Privacy-preserving encode-based Range Query over
+encrypted cloud data (namely basic EPRQ), which encodes
+the data and range by using Range Encode (REncoder), and
+then encrypts the codes via Additional Symmetric-Key Hidden
+Vector Encryption (ASHVE) technology. The basic EPRQ can
+achieve effective range query while ensuring privacy protection.
+Then, we split the codes to reduce the storage cost. We further propose an improved scheme, EPRQ+, which constructs a
+binary tree-based index to achieve faster-than-linear retrieval.
+Finally, our formal security analysis proves that our schemes
+are secure against Indistinguishability under Chosen-Plaintext
+Attack (IND-CPA), and extensive experiments demonstrate that
+our schemes are feasible in practice, where EPRQ+ scheme
+improves the storage efficiency by about 4 times and the query
+efficiency by about 8 times compared to the basic EPRQ.
+Index Terms— Searchable symmetric encryption, privacypreserving range query, range encoder, symmetric-key hidden
+vector encryption.
+
+I. I NTRODUCTION
+ITH the popularity of various mobile devices (such
+as smart phones, laptops, etc.), various kinds of data
+emerge endlessly [1], [2], which includes a large number of
+
+W
+
+Received 20 March 2024; revised 15 June 2024 and 3 August 2024; accepted
+13 September 2024. Date of publication 23 September 2024; date of current
+version 3 October 2024. This work was supported in part by the National Key
+Research and Development Program of China under Grant 2021YFB3101100;
+in part by the Fundamental Research Funds for the Central Universities
+under Grant QTZX24077; in part by Shaanxi Fundamental Science Research
+Project for Mathematics and Physics under Grant 22JSY019; in part by
+the Foundation for Innovative Research Groups of the National Natural
+Science Foundation of China under Grant 62121001; in part by the National
+Natural Science Foundation of China under Grant 62072361, Grant 62302361,
+Grant 62272370, Grant U21A20464, and Grant U23A20306; in part by the
+Key Research and Development Program of Shaanxi Province under Grant
+2022GY-019; in part by Shaanxi Province Key Industry Innovation Chain
+Project under Grant 2023-ZDLGY-52; and in part by China Postdoctoral
+Science Foundation under Grant 2023M732735 and Grant 2024T170697. The
+associate editor coordinating the review of this article and approving it for
+publication was Dr. Sushmita Ruj. (Corresponding author: Yinbin Miao.)
+Yanrong Liang, Jianfeng Ma, and Yinbin Miao are with the School
+of Cyber Engineering, Xidian University, Xi’an 710071, China (e-mail:
+liangyr163@163.com; jfma@mail.xidian.edu.cn; ybmiao@xidian.edu.cn).
+Yuan Su is with the School of Cyber Science and Engineering, Xi’an
+Jiaotong University, Xi’an 710049, China (e-mail: suyuan@stu.xjtu.edu.cn).
+Robert H. Deng is with the School of Information Systems, Singapore
+Management University, Singapore 188065 (e-mail: robertdeng@smu.edu.sg).
+Digital Object Identifier 10.1109/TIFS.2024.3465928
+
+range data. Such data usually comes from the time range
+check-in on social networks, the scope judgments for hotel
+reservation, etc. At the same time, more and more enterprises
+and individuals tend to outsource the range data to cloud
+servers to save storage and computing costs. However, cloud
+servers are often considered to be semi-honest entity that
+may steal private information of outsourced data [3], [4],
+[5]. Therefore, to protect data privacy, range data should
+be encrypted before being outsourced to the cloud server.
+Nonetheless, encryption operations will make it difficult to
+share and analyze range data. Efficient and Privacy-preserving
+Range Query (EPRQ), as a typical range query method,
+has been widely studied, which can efficiently and securely
+retrieve all the encrypted data within the encrypted query
+range. However, there are still several issues to be resolved.
+At present, the common range query methods include prefix
+code [6], [7], [8], [9], [10] and B+ tree [11], [12]. Prefix code
+can be used to achieve valid range query. As shown in Fig. 1,
+the prefix code needs to construct the prefix family for each
+data, e.g.: 7 = {0111, 011∗, 01∗∗, 0∗∗∗, ∗∗∗∗}, and converts
+the query range to a prefix element that can cover this range,
+eg: [4, 7] = {01∗∗}. However, the query efficiency of prefix
+code is related to the size of total query range. If the prefix
+element of query range includes in the prefix family of one
+data, we consider that the data includes in the query range,
+eg: {01∗∗}∈{0111, 011∗, 01∗∗, 0∗ ∗ ∗, ∗ ∗ ∗∗}, 7∈[4, 7]. That
+is, prefix code query needs to determine m times for checking
+whether element is included in set, where m is linearly related
+to the length of code. When the total query range is very large,
+prefix code will suffer from low query efficiency. To improve
+the query efficiency, the researchers map all elements in prefix
+family to a bloom filter [7], [9]. However, the bloom filter
+will suffer from false positives, resulting in incorrect query
+results. The B+ tree [11] needs to construct a tree structure
+for all data as shown in Fig. 1. The values of each tree node
+represent a number range, where all values in the left subtree
+are smaller than or equal to the value of this tree node, and
+all values in the right subtree are larger than the value of this
+tree node. The user realizes the query by judging the size of
+query range and value of each tree node [12]. Although B+
+tree can achieve efficient range query, it will reveal the size
+relationship of each node value. Therefore, the existing range
+query method has the problem of inefficiency or inaccuracy or
+revealing some privacy. An accurate and efficient range query
+method is urgently needed.
+
+1556-6021 © 2024 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9086
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+We propose an Efficient and Privacy-preserving Range
+Query scheme (basic EPRQ) by using the above index
+structure, which can support efficient range query and
+achieve adaptive security.
+• We split the binary to reduce the length of converted
+binary string by REncoder, and construct the tree structure
+for all data to reduce query complexity. On this basis,
+we propose an enhanced scheme EPRQ+.
+• We give formal security analysis to prove that our EPRQ
+schemes are secure against Indistinguishability under
+Chosen-Plaintext Attacks (IND-CPA). Extensive experiments demonstrate that our EPRQ schemes are query
+effective, where EPRQ+ scheme improves the storage
+efficiency by about 4 times and the query efficiency by
+about 8 times compared to the basic EPRQ.
+The rest of this paper is organized as follows. Section II
+presents the related work. Section III reviews the preliminaries
+involved in our schemes. Section IV gives the specific system
+model & threat model, problem definition and design goals of
+the work. Section V describes two specific schemes in detail.
+Sections VI and VII analyze the security and performance of
+our proposed schemes, respectively. Section VIII concludes
+this paper.
+•
+
+Fig. 1.
+
+The examples of range query.
+
+To protect data privacy, the EPRQ scheme needs to adopt
+some encryption technology to ensure the security of scheme.
+At present, the mainstream encryption mechanism used in
+EPRQ scheme is k-Nearest Neighbor (kNN) [13], traditional
+asymmetric encryption and Homomorphic Encryption (HE)
+technologies. To enhance the commonality of query scheme
+and facilitate encryption, researchers usually quantize the
+value and the query range into two vectors, and use the
+vector product to judge the relationship between the value
+and the range. kNN is utilized to implement EPRQ [14],
+[15], which encrypts vectors by random matrix multiplication.
+However, kNN has been proven not to be resistant to Know
+Plaintext Attacks (KPA) [16], [17]. In addition, researchers
+also use traditional asymmetric encryption technology based
+on difficulty problems to implement EPRQ [18]. However,
+these schemes need to invoke bilinear map technique, which
+will result in larger search costs. In addition, the schemes [19],
+[20] use HE to realize query by directly judging the size
+of the value and range endpoint. However, HE will result
+in greatly storage and compute costs, which is unacceptable
+to mobile users. Therefore, the existing privacy-preserving
+range query scheme has the problem of insufficient security or
+low query efficiency. How to find a privacy-preserving range
+query scheme that balances security and efficiency is what
+researchers need to consider.
+As mentioned above, the existing range query schemes
+still suffer from the low efficiency and security. To solve
+the above issues, we first dexterously combine the idea
+of REncoder and Additional Symmetric-key Hidden Vector
+Encryption (ASHVE), and propose an Efficient and Privacypreserving Range Query scheme (basic EPRQ). Specifically,
+the basic EPRQ uses REncoder to convert each data and
+query range into a fixed length binary string, and improves
+SHVE to encrypt the valid bits to achieve secure range query.
+Since REncoder conversion will generate a large number of
+redundant meaningless values, we split binary strings to reduce
+the storage cost. At the same time, to improve the query
+efficiency, we reduce query complexity by constructing the
+tree structure for all data. On this basis, we further design an
+enhanced scheme EPRQ+, which supports lower cost range
+query. The main contributions of our work are as follows:
+• We use REncoder to convert the values and query range
+into two fixed length binary strings, and encrypt the
+converted binary strings using ASHVE to construct an
+new encrypted index structure.
+
+II. R ELATED W ORK
+A. Searchable Encryption (SE)
+SE can achieve efficient retrieve of encrypted data without
+compromising the privacy information of encrypted data and
+query [21], [22]. Song et al. [23] first proposed the concept of
+Searchable Symmetric Encryption (SSE), and also proposed
+the first SSE scheme based on ciphertext full-text search.
+Boneh et al. [24] first proposed the concept of asymmetric
+searchable encryption (Public-Key Encryption with Keyword
+Search, PEKS), and constructed the first PEKS scheme by
+using bilinear map. On this basis, to satisfy various demands
+of users, SE schemes that can realize various functions have
+been gradually proposed. Golle et al. [25] proposed a PEKS
+scheme for the first time that can realize conjunction keyword search, which greatly improves the accuracy of search
+results. To improve the retrieval efficiency, Curtmola et al. [26]
+improved the index structure of SE and designed the first SE
+scheme based on inverted index. Tong et al. [27] used Bloom
+filter and Katz-Sahai-Waters (KSW) encryption to implement privacy-protecting Boolean range query, and adopted
+Ciphertext-Policy Attribute-Based Encryption (CP-ABE) to
+achieve fine-grained temporary access control to further ensure
+the security of encrypted data. Liang et al. [28] used an
+improved Bloom filter structure CSC to achieve efficient
+retrieval, which overcomes the unavoidable high false positives and identifier correlation in traditional Bloom filters.
+To prevent malicious cloud servers from forging some search
+results, Li et al. [29] adopted homomorphic MAC and random challenge technologies to verify the correctness and
+completeness of the returned results respectively. Most of
+the above schemes focused on text-keyword retrieval. With
+the development of science and technology, various kinds
+of data have emerged, such as image data, spatial data
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+and so on. Therefore, the SE schemes for different types
+of data have also been extensively studied. Lu et al. [30]
+used the image-specific technology to extract image features,
+and used the order preserving encryption and random hash
+functions to construct a secure index and propose the first
+encrypted image retrieval scheme. Li et al. [31] used CNN
+model and K-means clustering algorithm to achieve image
+retrieval, and constructed a dynamic verification tree based
+on chameleon hash to verify the correctness of the search
+results. Guan et al. [18] used bilinear map and Bloom filter to
+significantly reduce the computational cost of range queries.
+Zhu et al. [32] combined deep hashing and adversarial learning
+to construct a two-branches GAN hash model to extract data
+features. In addition, this scheme designed a hierarchical hash
+index to improve retrieval efficiency.
+
+9087
+
+TABLE I
+C OMPARISON B ETWEEN P REVIOUS S CHEMES
+AND O UR T WO EPRQ S CHEMES
+
+B. Privacy-Preserving Range Query
+Given an encrypted query range and a set of encrypted
+values, privacy-preserving range query can return all encrypted
+values that contained within this encrypted query range without revealing the query range and values. At present, range
+query has been widely studied because of its wide applicability. Tong et al. [14] and Song et al. [33] encoded the
+query range and value into two vectors using comparable
+product encoding and curve fitting, respectively, and then
+both used the improved kNN to encrypt vectors and achieve
+retrieval. In addition, the scheme [14] used CP-ABE to
+encrypt the secret key used by each outsourced ciphertext
+to protect the ciphertext privacy, and the scheme [33] used
+polynomial function to set the access policy to protect the
+ciphertext privacy. Gong et al. [15] converted spatial data
+into vectors by Gray code and Bloom filter, and used the
+improved kNN to encrypt vectors and implement boolean
+range query. All of the above schemes can realize effective
+range query. However, since kNN has been proved to not
+resistant to Known Plaintext Attacks (KPA) [16], [17], the
+above schemes suffered from inadequate security. To improve
+the security of the query scheme, Guan et al. [18] implemented rectangle range intersection detection based on an
+inner-product preserving encryption, and used bilinear map
+and Bloom filter to implement encryption. Wang et al. [19]
+directly used symmetric homomorphic encryption (SHE) to
+encrypt the query range and values, and realized range query
+by judging the size of ciphertexts with the help of two
+servers. Tong et al. [27] and Miao et al. [20] converted
+spatial data into vector through the specific transformation
+methods, and realized secure retrieval by using KSW and
+SHE respectively. Although the above schemes can achieve
+secure range query, SHE or traditional symmetric encryption
+technology cannot avoid a lot of computation costs, which
+will result in inefficient query. To achieve a secure and
+efficient range query, Wang et al. [7] and Miao et al. [34]
+used Symmetric-key Hidden Vector Encryption [35] to encrypt
+vectors converted from data and query range. However, both
+schemes used Bloom filter to improve query efficiency, which
+will introduce false positive that Bloom filter cannot avoid
+and produce incorrect query results. In addition, to improve
+
+the practicality of scheme, some researchers consider implementing range query on dynamic database [8], [36]. To ensure
+the forward/backward privacy of dynamic range query, two
+schemes [8], [36] embeded the number of updates and queries
+into indexes and tokens, and assigned state to each entity in
+the system. Only when the numbers and status match at the
+same time, the server can successfully query, so as to realize
+the forward/backward privacy of dynamic range query.
+A comparative summary of our EPRQ schemes and the
+existing schemes is presented in TABLE I. It can be
+seen that, although the existing schemes can realize the
+privacy-preserving range query, they have their own shortcomings. Wang et al. [7], Tong et al. [14], Guan et al. [18],
+and Tong et al. [27] can achieve sublinear query efficiency.
+However, Wang et al. [7] and Guan et al. [18] have the false
+positive problem that Bloom filter has to face. The k-Nearest
+Neighbor encryption algorithm and R-tree structure used by
+Tong et al. [14] are not secure enough and will leak privacy
+information. The traditional symmetric encryptions adopted by
+Guan et al. [18] and Tong et al. [27] involve computationally expensive operations and result in low query efficiency.
+In addition, although Song et al. [33] and Miao et al. [34] can
+realize efficient range query, the kNN encryption algorithm
+used by Song et al. [33] has the problem of insufficient security, and Miao et al. [34] has the false positive problem faced
+by Bloom filter, and cannot realize accurate and secure range
+query. Therefore, the target of this paper is to construct the
+privacy-protecting and efficient accurate range query scheme.
+III. P RELIMINARIES
+In this section, we review the relevant background knowledge used in this paper, including Range Encoder (REncoder) [37] and Symmetric-key Hidden Vector Encryption
+(SHVE) [35].
+A. Range Encoder
+Range Encoder (REncoder) [37] is a range filter that can
+implement range membership query, i.e. determining whether
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9088
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+Fig. 2.
+
+The Insertion and Query of REncoder.
+
+a value is contained in a range. Existing range filter methods
+still have some disadvantages, for example, SuRF [38] suffers
+from the high false positive rate and Rosetta [39] has the
+low throughput. However, REncoder can achieve accurate and
+efficient range query. REncoder consists of two algorithms:
+REncoder.Insertion and REncoder.Query.
+REncoder.Insertion: For a value d = (o1 o2 · · · om ), the
+algorithm first splits it into the prefix pr e = (o1 · · · om/2 )
+and suffix su f = (om/2+1 · · · om ), where the prefix is
+used for localization and the suffix is used for encoding. Then, the algorithm encodes the suffix su f =
+(om/2+1 · · · om ) as an (m/2+1)-layer binary tree, and sets
+the values of the traversed nodes to 1 to generate a
+segment tree, where om/2+1 = 0 represents traversing
+the left path, and om/2+1 = 1 represents traversing the
+right path. After that, the algorithm converts all nodes
+of the segment tree into one Bitmap Tree (BT). Finally,
+the prefix is hashed to the k specific locations, and BT
+corresponding to the suffix is embedded into the range
+bloom filter (RBF) bit by bit using OR operation from
+the mapping location. Fig. 2 shows an example of the
+Insertion phase.
+• REncoder.Query: For a query q = [qa , qb ], the
+algorithm first decomposes q into several non-overlapping
+sub-ranges, each of which corresponds to a prefix element
+that can exactly cover all values in the range, eg: [0,
+4] = [0000, 0011] and the corresponding prefix element
+is 00. Then, the algorithm queries each sub-range one
+by one. The algorithm queries RBF for the existence of
+the BT corresponding to some sub-range. If it returns
+yes, the algorithm continues to perform the following
+operations, otherwise validates the next sub-range. Next,
+the algorithm first extracts k BTs and performs the
+AND operation bit by bit to get the final BT. Then,
+the algorithm conducts a depth-first traversal of the
+•
+
+mini-tree corresponding to the prefix element in the final
+BT: Starting from the root node of the mini-tree, the
+algorithm queries RBF for the existence of the value
+corresponding to the current node, if it returns positive,
+continue to traverse down the tree, otherwise terminate
+the current path. If the traversal reaches a leaf node and
+returns positive, REncoder reports that the sub-range is
+not empty, which also indicates that the target range is not
+empty. Otherwise, REncoder reports that the sub-range is
+empty. Fig. 2 shows an example of the Query phase.
+B. Symmetric-Key Hidden Vector Encryption
+Symmetric-Key Hidden Vector Encryption (SHVE) [35]
+is a predicate encryption that supports conjunctive, equality,
+comparison, and subset queries of encrypted data. For two
+vectors v⃗ = (v1 , · · · , vm ) ∈ 6∗m and x⃗ = (x1 , · · · , xm ) ∈ 6 m ,
+we have
+(
+1 ∀1 ≤ i ≤ m (vi = xi or vi = ∗),
+Pv⃗SHVE (⃗
+x) =
+0 other wise,
+where 6 represents a pre-defined set of attributes, “∗′′ represents a wildcard, m represents the width of the SHVE and
+6∗ = 6 ∪ {∗}. If x⃗ matches v⃗ in all dimensions, Pv⃗SHVE (⃗
+x) =
+1. A SHVE consists of four algorithms: SHVE.Setup,
+SHVE.KeyGen, SHVE.Enc and SHVE.Query. The details
+of the construction are as follows.
+• SHVE.Setup(1λ ): Input the security parameter λ and
+$
+uniformly samples msk ← {0, 1}λ , the algorithm defines
+the payload message space M, and outputs (msk, M).
+• SHVE.KeyGen(msk, v
+⃗ ∈ 6∗m ): Input a predicate vector
+v⃗ = (v1 , · · · , vm ) ∈ 6∗m and the master secret key
+$
+
+msk, the algorithm samples K ← {0, 1}λ+logλ and
+calculates d0 = ⊕ j∈[|S|] (F0 (msk, vl j ||l j )) ⊕ K and d1 =
+Sym.Enc(K , 0λ+logλ ), where S = {l j ∈ [m]|vl j ̸ = ∗},
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+9089
+
+Cloud service provider. CSP has enormous storage and
+computing capabilities. CSP stores the encrypted data
+outsourced by DO, and responds to the query request
+from authorized DU, and returns the query result to the
+DU.
+As shown in Fig. 3, our EPRQ schemes consist of the
+following five steps. First, DO constructs the index for all
+outsourced data, encrypts the data and index and sends them
+1 ⃝).
+2 Then, DO authorizes the
+to the cloud server (steps ⃝,
+DU and sends the secret key to the authorized DU via secure
+3 When DU needs to initiate a query, he/she
+channel (step ⃝).
+encrypts the query range as a token and sends the token to CSP
+4 Finally, CSP utilizes the received token to match
+(step ⃝).
+the stored encrypted data and returns the query result to DU
+5
+(step ⃝).
+1) Threat Model: Similar to the most previous range
+query schemes, our scheme assumes that the cloud server
+is “honest-but-curious”. That is, CSP will honestly perform
+the predefined protocol. But at the same time, CSP will
+be curious to collect all kinds of meaningful information
+during the query to infer the specific content of the index
+and token. In addition, we consider that DO and DU are
+fully trusted, which correctly execute predefined protocols and
+cannot collude with unauthorized DU and CSP. It is worth
+noting that our proposed scheme focuses on the effective range
+query of encrypted data, but does not consider the protection of
+access pattern and search pattern. In addition, all interactions
+between entities are also assumed to be secure.
+•
+
+Fig. 3.
+
+The system model of EPRQ.
+
+F0 : {0, 1}λ × {0, 1}λ+logλ → {0, 1}λ+logλ represents a
+pseudorandom function (PRF) and (Sym.Enc, Sym.Dec)
+represents an IND-CPA secure symmetric encryption
+scheme. Finally, the algorithm outputs the decryption key
+s = (d0 , d1 , S).
+• SHVE.Enc(msk, µ ∈ M, x
+⃗ ∈ 6 m ): Input a message
+µ, an index vector x⃗ = (x1 , · · · , xm ) ∈ 6 m and the
+master secret key msk, the algorithm calculates cl =
+F0 (msk, xl ||l). Finally, the algorithm outputs the ciphertext c = ({cl }l∈[m] ).
+• SHVE.Query(s, c): Input the ciphertext c and the decryption key s, the algorithm calculates K ′ = (⊕ j∈[|S|] cl j ) ⊕
+d0 , and computes µ′ = Sym.Dec(K ′ , d1 ). If µ′ =
+0λ+logλ , the algorithm outputs µ; otherwise outputs ⊥.
+We consider that a SHVE scheme is correct if for all
+security parameter λ and all x⃗ and v⃗, after running the above
+SHVE.Setup, SHVE.KeyGen and SHVE.Enc algorithms to
+x ) = 1, then SHVE.Query(s, c) =
+generate s and c, if Pv⃗SHVE (⃗
+µ, otherwise
+Pr[SHVE.Query(s, c) =⊥] = 1 − negl(λ).
+IV. P ROBLEM F ORMULATION
+In this section, we formalize the system model & threat
+model, problem definition and design goals of our schemes.
+A. System Model & Threat Model
+In this paper, we consider a scenario where the encrypted
+data is outsourced to the cloud server. As shown in Fig. 3,
+our scheme involves three entities, namely Data Owner (DO),
+Data User (DU), and Cloud Server Provider (CSP). The roles
+of each entity are as follows:
+• Data owner. DO is responsible for constructing and
+encrypting indexes of all outsourced data, and sends it
+to CSP. At the same time, DO generates the secret key
+for all authorized DUs and distributes them by a secure
+channel.
+• Data users. The authorized DU can access the outsourced
+encrypted data. When an authorized DU needs to query,
+he or she encrypts the query range as a token and submits
+the token to the cloud server.
+
+B. Problem Definition
+DB = {d1 , · · · , dn } represents the dataset outsourced by
+DO and q = [qa , qb ] represents the query range transmitted
+by DU. To achieve query, the data and query range are
+usually encoded into two codewords F and S using a specific
+encode method, and then by matching F and S to determine
+whether the data is included in the query range. Existing
+range query schemes usually use prefix encode to implement
+query. As shown in Fig. 1, an m-bit data di = (o1 o2 · · · om )
+needs to construct a prefix family containing m+1 elements
+F = {(o1 o2 · · · om ), (o1 o2 · · · ∗), · · · , (o1 ∗ · · · ∗), (∗ ∗ · · · ∗)}.
+When q is queried, it is converted to the smallest prefix
+element S that can contain the query range. The cloud server
+needs to match elements in the prefix family and prefix
+element one by one, that is, whether S is contained in F
+and m+1 matches are required. The computational complexity
+of the query is proportional to the size of m, which makes
+the query time too large under large datasets. In addition,
+although the converted codeword is not the original data and
+range, it will still reveal relevant privacy. Therefore, EPRQ
+needs to encrypt codeword to achieve secure query. In the
+existing EPRQ schemes, the kNN algorithm is usually used
+for encryption. However, kNN algorithm has been proven not
+to be resistant to Know Plaintext Attacks (KPA), which cannot
+achieve sufficient security. Next, we give the formal definition
+of our scheme as follows:
+Definition 1: (Efficient and Privacy-Preserving Range
+Query, EPRQ)Given a database DB = {d1 , · · · , dn } and
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9090
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+Fig. 4.
+
+Construction process of our schemes.
+
+a query range q = [qa , qb ], EPRQ runs the IndexBuild
+and TokenGen algorithms to generate Enc(DB) and
+Enc(q) and retrieves a subset Result from DB, such that
+∀idi ∈ Result, di ∈ q.
+C. Design Goals
+To achieve efficient and privacy-preserving range query, our
+scheme needs to realize the following requirements:
+• Data Privacy: DO constructs the index for the dataset
+and outsources them to the cloud server. In addition, the
+unauthorized entities and cloud server cannot know the
+specific content of the plaintext dataset.
+• Query Privacy: Only the authorized DU can generate
+token and initiate query. In addition, the unauthorized
+entities and cloud server cannot know the query specific
+content.
+• Efficiency: Our scheme can achieve efficient and
+privacy-preserving range query through indexes and
+tokens.
+V. O UR P ROPOSED S CHEME
+In this section, we propose two range query schemes: Efficient and Privacy-preserving encode-based Range Query over
+encrypted cloud data (basic EPRQ) and the enhanced scheme
+EPRQ+. Before introducing the specific EPRQ, we first
+improve the traditional SHVE to propose ASHVE by introducing additional values, which can hide the index length. After
+that, we propose the basic EPRQ by combining REncoder with
+ASHVE. Then, to reduce storage requirements and improve
+retrieval efficiency, we propose a more practical enhanced
+scheme EPRQ+ by using split and tree structure.
+
+A. Basic Scheme: Basic EPRQ
+Main Idea. As mentioned in Section I, the existing EPRQ
+schemes suffer from some challenges, such as inefficiency
+and insecurity. The existing EPRQ schemes usually use prefix
+encode to implement query. However, the prefix encode needs
+to match prefix family F of d = (o1 o2 · · · om ) and prefix
+element S of q = [qa , qb ] in query, where m + 1 matches
+need to be performed and m is linearly related to the total
+query range. When the total query range is large, prefix encode
+suffers from low query efficiency. Therefore, we need to
+construct a novel index structure to achieve efficient range
+query. We take advantage of a new binary tree-based encode
+method: REncoder. We frist convert the m-bit data or query
+range through REncoder as a 2(m+1) − 1-bit binary string.
+Then, the cloud server only needs to match two binary strings
+to judge whether the data is included in the query range,
+which can achieve more efficient range query than prefix
+encode. However, unencrypted binary strings will reveal the
+value of the original data. To protect the security of binary
+strings, we can directly call the traditional SHVE algorithm
+for encryption. Nevertheless, the traditional SHVE will reveal
+the length of the binary string. According to the binary tree
+conversion method and the encryption method of SHVE,
+when one query is successful matched, the adversary will
+infer the specific query range, which still reveals the privacy.
+Therefore, to solve the privacy leakage problem mentioned
+above, we can hide the specific binary string length and
+improve the traditional SHVE by introducing some additional
+positions to present Additional Symmetric-key Hidden Vector
+Encryption (ASHVE). We use ASHVE to encrypt the above
+converted binary strings and achieve the secure range query.
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+Therefore, we construct an effective EPRQ scheme, as shown
+in Fig. 4.
+1) Additional Symmetric-Key Hidden Vector Encryption: Additional Symmetric-key Hidden Vector Encryption
+(ASHVE) is also a predicate encryption that can support conjunctive, equality, comparison, and subset queries of encrypted
+data like SHVE. For two vectors v⃗ = (v1 , · · · , vm ) ∈ 6∗m and
+x⃗ = (x1 , · · · , xm ) ∈ 6 m , we have
+(
+1 ∀1 ≤ i ≤ m(vi = xi or vi = ∗),
+ASHVE
+Pv⃗
+(⃗
+x) =
+0 other wise,
+
+9091
+
+Algorithm 1 Details of IndexBuild in Basic EPRQ
+Input: DB = {d1 , d2 , · · · , dn }.
+Output: EDB = {c1 , c2 , · · · , cn }.
+1 Conversion:
+2 for i = 1; i ≤ n; i + + do
+3
+di = (o1 o2 · · · om )i ;
+4
+//Converts di to the m-bit binary;
+5
+BTi = [1, 0, · · · , 0];
+6
+//Initialize a (2(m+1) − 1)-bit binary string;
+7
+for j = 1; j ≤ m; j + + do
+8
+count ← o1 o2 · · · o j ;
+where the meanings of the symbols are the same as in 9
+BTi [count-1] = 1;
+SHVE. If x⃗ matches v⃗ in all dimensions, Pv⃗ASHVE (⃗
+x ) = 1. 10
+//Map di to a (2(m+1) − 1)-bit binary string;
+ASHVE also consists of four algorithms: ASHVE.Setup,
+ASHVE.KeyGen, ASHVE.Enc and ASHVE.Query. The 11 BT = {BT1 , BT2 , · · · , BTn };
+12 Encryption:
+details of the construction are as follows.
+13 for i = 1; i ≤ n; i + + do
+λ
+• ASHVE.Setup(1 ): Input the security parameter λ and
+14
+ci = ASHVE.Enc(msk, 0, BTi ) =
+$
+uniformly samples msk ← {0, 1}λ , the algorithm
+({ci j } j∈[2(m+1) +t−1] );
+defines the additional number t, the payload message
+space M, and outputs (msk, M), where t is a posi- 15 return EDB = {c1 , c2 , · · · , cn }.
+tive integer. Then, the algorithm chooses a secure hash
+function H : {0, 1}∗ → {0, 1}, a pseudorandom function (PRF) F : {0, 1}λ × {0, 1}λ+logλ → {0, 1}λ+logλ
+containing n data. For each data di , i ∈ [1, n] in DB,
+and an IND-CPA secure symmetric encryption scheme
+DO converts di to the m-bit binary form di = (o1 o2 · · · om )i .
+(Sym.Enc, Sym.Dec).
+Then, DO constructs an (m+1)-level binary tree, where the
+• ASHVE.KeyGen(msk, v
+⃗ ∈ 6∗m ): Input a predicate vector
+value of each node is set to 0. After that, DO traverses the
+v⃗ = (v1 , · · · , vm ) ∈ 6∗m and the master secret key
+corresponding binary tree according to the binary of di , where
+$
+msk, the algorithm samples K ← {0, 1}λ+logλ and 0 represents the left path and 1 represents the right path. That
+calculates d0′ = ⊕ j∈[|S1 |] (F(msk, vl j ||l j )) ⊕ K and d1 = is, starting from the root node, when o1 = 0, the path to the left
+Sym.Enc(K , 0λ+logλ ), where S1 = {l j ∈ [m]|vl j ̸= of the root node is traversed, otherwise the path to the right is
+∗}. Then, the algorithm randomly chooses some values traversed. Similarly, the m-bit binary can traverse the (m+1)from [1, t] to construct S2 = {l j ∈ [t]|l j is choosed} level binary tree. DO numbers each node of the segment tree
+such that |S1 ∪ S2 | is an even number, and calculates in breadth-first order, so that an m-bit binary can correspond
+d0′′ = ⊕ j∈[|S2 |] (F(msk, H(l j )||(l j + m))) and lets d0 = to 2(m+1) −1 nodes. Therefore, DO can map an m-bit binary to
+d0′ ⊕d0′′ and S = S1 ∪{S2 +m}, where {S2 +m} represents a (2(m+1) − 1)-bit binary string. And DO sets the values of the
+that each value in S2 is added to m. Finally, the algorithm above traversed nodes to 1 and the rest to 0. DO repeats this
+outputs the decryption key s = (d0 , d1 , S).
+method to convert the values in the DB one by one. Finally,
+• ASHVE.Enc(msk, µ ∈ M x
+⃗ ∈ 6 m ): Input a message µ, DO calls ASHVE.Enc to encrypt each converted value and get
+an index vector x⃗ = (x1 , · · · , xm ) ∈ 6 m and the master EDB = {c1 , c2 , · · · , cn }, and providers the encrypted index
+secret key msk, the algorithm extends x⃗ to get x⃗′ = EDB to the cloud server. To better illustrate the structure of
+(x1 , · · · , xm , H(1), H(2), · · · , H(t)) and calculates cl = Algorithm 1, we give an example of IndexBuild of EPRQ in
+F(msk, x⃗′ [l]||l) ⊕ F(msk, idx⃗ ). Finally, the algorithm Fig. 5: when m = 4, d = 7 = (0111), convert d to get BT =
+outputs the ciphertext c = ({cl }l∈[m+t] ).
+[1100100000100000000000100000000], and finally, encrypt
+• ASHVE.Query(s, c): Input the ciphertext c and the
+BT to get EDB.
+decryption key s, the algorithm calculates K ′ = TokenGen: The specific construction of TokenGen is shown
+(⊕ j∈[|S|] cl j ) ⊕ d0 , and computes µ′ = Sym.Dec(K ′ , d1 ). in Algorithm 2. q = [qa , qb ] represents a query range. First,
+If µ′ = 0λ+logλ , the algorithm outputs µ; otherwise DU decomposes the query range. Let R P = [0, 2m − 1], and
+outputs ⊥.
+DU compare q with R P . There are three cases: (1) If q and
+2) Scheme Details of Basic EPRQ: According to the above R P do not intersect, DU does nothing; (2) If R P is included
+in q, DU recodes R P as a sub-range; (3) If R P is intersected
+idea, we describe the details of basic EPRQ as follows.
+Setup: According to the security parameter λ, DO runs in q, DU compares q with the new R P = [0, (2m − 1)/2]
+ASHVE.Setup to generate the master key msk, a secure hash and R P = [(2m − 1)/2 + 1, 2m − 1]. DU repeats the above
+function H, a PRF F, and an IND-CPA secure symmetric process until there is no new R P . For example, when m =
+encryption scheme (Sym.Enc, Sym.Dec). At the same time, 4, q = [3, 7] can be divided into two sub-ranges: [3, 3] and
+[4, 7]. Accordingly, each sub-range is converted to the same
+DO chooses a positive integer m.
+IndexBuild: The specific construction of IndexBuild is shown (2(m+1) − 1)-bit binary string, and the values of the traversed
+in Algorithm 1. DB = {d1 , d2 , · · · , dn } represents the dataset nodes are set to 1 and the rest to *. However, in the binary
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9092
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+Fig. 5.
+
+Example of IndexGen in EPRQ.
+
+Algorithm 2 Details of TokenGen in Basic EPRQ
+Input: q = [qa , qb ].
+Output: TQ = {T Q1 , T Q2 , · · · , T Qk }.
+1 Decomposition:
+m
+2 R P = [0, 2 − 1];
+3 Rq = ∅;
+4 if (q ∩ R P = R P ) then
+5
+Rq .append(R P );
+else if (q ∩ R P ̸ = ∅) then
+7
+R P = R P /2;
+8
+//R P = [0, (2m − 1)/2] and
+R P = [(2m − 1)/2 + 1, 2m − 1];
+6
+
+// Repeat steps 4 - 7 for the new R P until there is no
+new R P .
+10 Conversion:
+11 k = si zeo f (Rq );
+12 for i = 1; i ≤ k; i + + do
+13
+BTQi = [1, ∗, · · · , ∗];
+14
+Rqi = (l1l2 · · · lm )i ;
+15
+// Convert each Rqi to binary, where the position
+that all value falls in Rqi is set to ∗;
+16
+for j = 1; j ≤ m; j + + do
+17
+if (l j ̸ = ∗) then
+18
+count ← l1l2 · · · li ;
+19
+BTQi [count - 1] = 1;
+20
+// Map Rqi to a (2(m+1) − 1)-bit binary
+string
+9
+
+BTQ = {BTQ1 , BTQ2 , · · · , BTQk };
+Encryption:
+23 for i = 1; i ≤ k; i + + do
+24
+T Qi = ASHVE.KeyGen(msk, BTQi ) =
+{di0 , di1 , Si };
+21
+
+22
+
+25
+
+return TQ = {T Q1 , T Q2 , · · · , T Qk }.
+
+tree, if an intermediate node is 1, it means that there must
+be a path to the leaf node in the subtree with this node as
+the root node. Therefore, if the subtree whose root node is an
+intermediate node is a full tree in a query sub-range, DU only
+need to set the value of this intermediate node to 1, and all
+nodes in the subtree whose root node is this intermediate node
+can be set to *. DU repeats this method to convert each query
+sub-range one by one. Then, DU calls ASHVE.KeyGen to
+encrypt each converted sub-range and get T Q = {d0 , d0 , S}.
+Finally, DU generates token TQ and submits TQ to the cloud
+server. Notably, in line 14 of Algorithm 2, each sub-range is
+converted into an m-bit binary that can cover this sub-range.
+Whether the position is 0 or 1, If the corresponding value is
+
+included in the sub-range, this position is represented as *.
+To better illustrate the structure of Algorithm 2, we give an
+example of TokenGen of EPRQ in Fig. 6: when m = 4, q =
+[4, 7] = [0100, 0101, 0110, 0111] = (01**), convert q to get
+BTQ = [11**1**************************], and finally,
+encrypt BTQ to get TQ .
+Algorithm 3 Details of Query in Basic EPRQ
+Input: EDB = {c1 , c2 , · · · , cn } and
+TQ = {T Q1 , T Q2 , · · · , T Qk }.
+Output: Result.
+1 Result = ∅;
+2 // Initialize a candidate set;
+3 for i = 1; i ≤ n; i + + do
+4
+for j = 1; j ≤ k; j + + do
+5
+µ = ASHVE.Query(T Q j , ci );
+6
+if µ = 0λ+logλ then
+7
+Result.append(idi );
+8
+
+return Result.
+
+Query: The specific construction of Query is shown in
+Algorithm 3. After receiving the token TQ from DU, the cloud
+server matches each data with each query sub-range. The cloud
+server runs ASHVE.Query to calculates µ′ . If µ′ = 0λ+logλ ,
+the data is contained in the sub-range. Then, the cloud server
+adds the identifier id of this data to candidate set. Finally,
+the cloud server returns the candidate set as the result of the
+query.
+Remark: As shown in subsection V-A, our basic EPRQ
+can achieve efficient range query on encrypted data, and also
+achieve the privacy protection by encrypting data and query
+range. However, the basic EPRQ still has a shortcoming in
+terms of storage. The m-bit binary is converted to a (2(m+1) +
+t − 1)-bit binary string, i.e., the length of the binary string
+increases exponentially with the length of the binary. When
+m is large, the binary string will also be long. At the same
+time, each binary string has a large number of 0 value without
+meaning. The large storage requirements are a challenge for
+both user and server. In addition, the basic EPRQ needs to
+query the encrypted data stored in the cloud server one by
+one. Despite the efficiency of single query is high, when a
+large amount of data is stored in the cloud server, DU will
+still face a lot of query latency, which will greatly affect the
+user’s query experience.
+B. Enhanced Scheme: EPRQ+
+1) Main Idea: It can be seen that the storage cost of
+index in the basic EPRQ is exponentially related to the
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+9093
+
+Fig. 6.
+
+Example of TokenGen in EPRQ.
+
+Fig. 7.
+
+Example of IndexGen in EPRQ+.
+
+length of the binary. One m-bit binary (o1 o2 · · · om ) can be
+converted to a (2(m+1) − 1)-bit binary string BT. To solve
+the problem of excessive storage cost in the basic EPRQ,
+we split the binary. Assuming m = s · x, we split the mbit binary into x s-bit sub-binaries. Then, DO converts each
+sub-binary in turn to produce a (x · (2(s+1) − 1))-bit binary
+string. Obviously, x · (2(s+1) − 1) < 2(m+1) − 1. In TokenGen,
+to successfully match, DU also needs to split the query binary
+in the same way and convert each sub-binary in turn. Note
+that, like basic EPRQ, indexes and tokens are encrypted by
+ASHVE.Enc and ASHVE.KeyGen. Moreover, to solve the
+inefficiency of the basic EPRQ, we can construct the tree
+structure for the encrypted dataset and improve the linear query
+cost to sublinear cost. Therefore, we improve the basic EPRQ
+to propose a more practical and efficient scheme EPRQ+,
+as shown in Fig. 4. The specific construction of EPRQ+ is
+as follows:
+
+Algorithm 4 Details of IndexBuild in EPRQ+
+Input: DB = {d1 , d2 , · · · , dn }.
+Output: EDB.
+1 Conversion + Split:
+2 for i = 1; i ≤ n; i + + do
+3
+di = (o1 o2 · · · om )i ;
+4
+// Converts di to the m-bit binary;
+5
+BTinew = [0, 0, · · · , 0];
+6
+// Initialize a (x · (2(s+1) − 1))-bit binary string;
+7
+di1 = (o1 · · · os )i , · · · , di x = (os(x−1)+1 · · · om )i ;
+8
+// Split di into x s-bit binaries;
+9
+for j = 1; j ≤ x; j + + do
+10
+BTi j = [1, 0, · · · , 0];
+11
+// Initialize a (2(s+1) − 1)-bit binary string
+Convert di j to (2(s+1) − 1)-bit binary string BTi j
+as Algorithm 1;
+12
+
+2) Scheme Details: According to the above idea, EPRQ+
+is described in detail as follows.
+Setup: According to the security parameter λ, DO generates
+the master key msk, a PRF F, a symmetric encryption
+scheme (Sym.Enc, Sym.Dec), the positive integer m and a
+hash function H as described in the basic EPRQ. In addition,
+DO chooses a positive integer s, where m = s · x.
+IndexBuild: The specific construction of IndexBuild is shown
+in Algorithm 4. DB = {d1 , d2 , · · · , dn } represents the dataset
+containing n data. For each data di , i ∈ [1, n] in DB,
+DO splits di to the x s-bit sub-binaries and converts each
+sub-binary to (2(s+1) − 1)-bit binary string as described in
+the basic EPRQ.IndexBuild. Then, DO conjuncts the binary
+string converted by each sub-binary, and generates the (x ·
+(2(s+1) − 1))-bit binary string. In addition, DO constructs
+the binary tree structure for the data in DB. Each leaf node
+represents one data, and the new binary string of this data
+is stored in the leaf node. Then, one binary string with
+the same length is stored in the non-leaf node, where the
+value at each position is the XOR of the values of two
+child nodes at the corresponding position. Then, DO utilizes
+ASHVE.Enc to encrypt each binary string as described in
+the basic EPRQ.IndexBuild. It is worth noting that, unlike
+ASHVE.Enc, for each non-leaf node, DO computes ci j =
+F(msk, BTinew [ j]|| j) ⊕ F(msk, idl ) ⊕ F(msk, idr ), where idl
+
+13
+
+BTinew = {BTi1 || · · · ||BTis };
+// Connect BTs of each split binary;
+
+new
+new
+BF = {BFnew
+1 , BF2 , · · · , BFn };
+15 Construct a tree structure for DB, and the parent
+node is the XOR of two child nodes;
+16 Encryption:
+new do
+17 for each leaf node BTi
+18
+ci = ASHVE.Enc(msk, 0, BTinew ) =
+({ci j } j∈[2(m+1) +t−1] );
+14
+
+for each non-leaf node BTinew do
+20
+Run ASHVE.Enc to encrypt BTinew as Algorithm 1
+but ci j =
+F(msk, BTinew [ j]|| j) ⊕ F(msk, idl ) ⊕ F(msk, idr );
+21
+// idl represents the identifier of first data in the left
+child node and idr represents the identifier of last
+data in the right child node
+22 return EDB.
+19
+
+represents the identifier of first data in the left child node
+and idr represents the identifier of last data in the right child
+node. Finally, DO generates the encrypted index EDB and
+sends it to the cloud server. To better illustrate the structure of
+Algorithm 4, we give an example of IndexBuild of EPRQ+
+in Fig. 7: when m = 4 and s = 2, d = 7 = (0111) = (01)(11),
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9094
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+Fig. 8.
+
+Example of TokenGen in EPRQ+.
+
+Algorithm 5 Details of TokenGen in EPRQ+
+Input: q = [qa , qb ].
+Output: TQ = {T Q1 , T Q2 , · · · , T Qk }.
+1 Decomposition + Split + Conversion:
+2 Decompose q into k sub-ranges
+{Rqi = (l1l2 · · · lm )i }i∈[1,t] as Algorithm 2;
+3 for i = 1; i ≤ k; i + + do
+4
+Rqi = (l1l2 · · · lm )i ;
+5
+BTQinew = [1, ∗, · · · , ∗];
+6
+// Initialize a (x · (2(s+1) − 1))-bit binary string;
+7
+Rqi1 = (l1l2 · · · ls )i , · · · , Rqi x = (ls(x−1)+1 · · · lm )i ;
+8
+// Split Rqi into x s-bit binaries;
+9
+for j = 1; j ≤ x; j + + do
+10
+BTQi j = [1, 0, · · · , 0];
+11
+// Initialize a (2(s+1) − 1)-bit binary string
+Convert Rqi j to (2(s+1) − 1)-bit binary string
+BTQi j as Algorithm 2;
+12
+13
+
+BTQinew = {BTQi1 || · · · ||BTQis };
+// Connect BTQs of each split binary;
+
+new
+new
+BTQ = {BTQnew
+1 , BTQ2 , · · · , BTQk };
+Encryption:
+16 for i = 1; i ≤ k; i + + do
+17
+T Qi = ASHVE.KeyGen(msk, BTQinew ) =
+{di0 , di1 , Si };
+
+matched, continue to match its child node; otherwise, stop
+search this subtree. When arrival a leaf node, if the match is
+successfully, CSP adds the corresponding id into Result.
+Remark: EPRQ+ can realize efficient range query, but does
+not leak the plaintext query information, which also achieves
+the acceptable security requirements as most of existing SE
+schemes. However, EPRQ+ also has some shortcomings.
+EPRQ+ does not take into account data dynamics. When
+dynamic range query needs to be achieved, EPRQ+ can
+construct balanced binary trees. When inserting a new data,
+we take the first leaf node with the lowest height as the
+child root node. The original value of this node is taken
+as the value of its left child node, and the newly inserted
+value is taken as the value of its right child node. Finally,
+we update the values of all nodes on the path from the
+new leaf node to the root node and achieve data insertion.
+The deletion and update operations are similar to insertion
+operations. However, the above dynamic range query method
+cannot ensure the forward/backward privacy, which will result
+in privacy disclosure.
+
+14
+
+15
+
+18
+
+return TQ = {T Q1 , T Q2 , · · · , T Qt }.
+
+convert d to get BT1 = [1100100] and BT2 = [1010001], and
+then connect them to get BTnew = [1100100 1010001], and
+finally encrypt BTnew to get EDB.
+TokenGen: The specific construction of TokenGen is shown
+in Algorithm 5. q = [qa , qb ] represents a query range.
+DU first decomposes the query range to k sub-range. After
+that, DU splits each sub-range of q to the x s-bit sub-binaries
+and converts each sub-binary to (2(s+1) −1)-bit binary string as
+described in the basic EPRQ.TokenGen. Then, DU conjuncts
+the binary string converted by each sub-binary, and generates
+the (x ·(2(s+1) −1))-bit query binary string BTQinew . After that,
+DU utilizes the ASHVE.KeyGen to encrypt each query binary
+string as described in the basic EPRQ.TokenGen. Finally,
+DU generates the token TQ and sends it to the cloud server.
+To better illustrate the structure of Algorithm 5, we give an
+example of TokenGen of EPRQ+ in Fig. 8: when m = 4 and
+s = 4, q = [4, 7] = [0100, 0101, 0110, 0111] = (01**) =
+(01)(**), convert q to get BTQ1 = [11**1**] and BTQ2 =
+[*******], and then connect them to get BTQnew = [11**1**
+*******], and finally, encrypt BTQnew to get TQ .
+Query: This process is the same as that of the basic EPRQ.
+Starting from the root node of EDB, CSP runs ASHVE.Query
+to perform the match. If a non-leaf node is successfully
+
+VI. S ECURITY A NALYSIS
+In this section, we first give the formal security definition
+to prove that EPRQ is secure against IND-CPA [34]. Then,
+we give two theorems to prove the security of our EPRQ
+schemes.
+Before proving that our EPRQ schemes guarantee data
+privacy and query privacy against IND-CPA, we first simulate
+a security game played between an adversary A from the ideal
+security and a challenger C.
+Definition 2 (IND-CPA of EPRQ): Let 5 = (Setup,
+IndexBuid, TokenGen, Query) be an EPRQ scheme. The
+security game between an adversary A and a challenger C is
+defined as:
+• Init: Input a security parameter λ, A selects two
+datasets DB0 = {d01 , d02 , · · · , d0n } and DB1 =
+{d11 , d12 , · · · , d1n } or two query range q0 = [q0a , q0b ]
+and q1 = [q1a , q1b ] to C, where each dataset has n data.
+• Setup: The challenger C runs Setup to generate the
+master key msk and keeps msk private.
+• Phase 1: The adversary A issues a series of query
+requests, which can be divided into the following two
+parts:
+1) On the j-th index request, the adversary A outputs a
+dataset DB j = {d j1 , d j2 , · · · , d jn } and the challenger C
+runs IndexBuid to generate an encrypted index EDB j in
+response.
+2) On the j-th token request, the adversary A outputs a
+query range q j = [q ja , q jb ] and the challenger C runs
+TokenGen to generate a token TQj in response.
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+Challenge: C chooses a random bit b ∈ {0, 1}, and
+calculates the ciphertext EDBb of DBb using IndexBuid
+or token TQb of qb using TokenGen and sends it to A.
+• Phase 2: the adversary A can continue to adaptively
+issue the same series of requests as in Phase 1.
+• Guess: the adversary A takes a guess b′ of b.
+We say that 5 is secure against IND-CPA if for any Probabilistic Polynomial Time adversary A in the above security
+game, it has at most a negligible advantage
+•
+
+IND−CPA λ
+′
+AdvEPRQ,
+A (1 ) = |Pr (b == b) − 1/2| ≤ negl(λ),
+
+where negl(λ) represents a negligible function. Note that, since
+the same encryption algorithm is used, EPRQ+ has the same
+security level as the basic EPRQ. Therefore, if the basic EPRQ
+is secure against IND-CPA, EPRQ+ is also secure against
+IND-CPA. Below, we will unify the two schemes as EPRQ.
+Theorem 1: (Data Privacy of EPRQ): EPRQ is IND-CPA
+data secure if there exists no adversary that can break the
+above IND-CPA game with non-negligible advantage.
+Proof: To prove the IND-CPA data privacy of EPRQ,
+we first simulate the above security game with an adversary A. And we should prove that A cannot distinguish
+EDB0 and EDB1 , even if the adversary A has oracle access
+to IndexBuild. Assume that d ji represents one data in DB j .
+First, d ji is converted to a binary string by REncoder. Then,
+calculate H( j), 1 ≤ j ≤ t to add t additional values,
+where H is a secure hash function with the range {0, 1}.
+Finally, each value of the binary string is encrypted as c j =
+F(msk, BTnew [ j]|| j) ⊕ F(msk, id), where msk is randomly
+sampled from {0, 1}λ . Since the adversary A has no idea about
+H and msk, A cannot recover the encrypted index EDB ji .
+In Phase 1 and Phase 2 of the above security game, the
+adversary A randomly selects d ji and generates the encrypted
+index EDB ji by IndexBuild. However, since H is a secure
+$
+
+hash function and msk ← {0, 1}λ in IndexBuild, the encrypted
+index EDB ji is random to adversary A. That is, for any
+data selected by adversary A and its corresponding encrypted
+index, A cannot distinguish which data is actually encrypted.
+Therefore, even if the adversary A can call IndexBuild any
+number of times, A can only randomly guess b′ . So, we have
+IND−CPA−Data λ
+AdvEPRQ,
+(1 ) = |Pr (b′ == b) − 1/2| ≤ negl(λ).
+A
+
+Therefore, based on the above proof, EPRQ is IND-CPA
+data secure.
+Theorem 2: (Query Privacy of EPRQ): EPRQ is IND-CPA
+query secure if there exists no adversary that can break the
+above IND-CPA game with non-negligible advantage.
+Proof: The proof of query privacy of EPRQ is similar
+to the proof of data privacy mentioned above. To prove the
+IND-CPA query privacy of EPRQ, we also first simulate the
+above security game with an adversary A and prove that A
+cannot distinguish q0 and q1 , even if the adversary A has
+oracle access to TokenGen. Let q j represents one query.
+Similarly, q j first is converted to a binary string by REncoder.
+Then, randomly select some values from [1, t] and calculate
+H( j) for the selected value j, where H is a secure hash
+function with the range {0, 1}. Finally, each meaningful value
+
+9095
+
+is encrypted as d0 = ⊕ j∈[|S|] (F(msk, BTQnew [ j]|| j))⊕ K and
+d1 = Sym.Enc(K , 0λ+logλ ), where msk is randomly sampled
+from {0, 1}λ and K is randomly sampled from {0, 1}λ+logλ .
+Since the adversary A has no idea about H, K and msk, TQj
+is random to A. Like Theorem 1, for any query selected by
+adversary A and its corresponding token, A cannot distinguish
+which query is actually encrypted. Therefore, even if the
+adversary A can call TokenGen any number of times, A can
+only randomly guess b′ . So, we also have
+IND−CPA−Query
+
+AdvEPRQ,A
+
+(1λ ) = |Pr (b′ == b) − 1/2| ≤ negl(λ).
+
+Therefore, based on the above proof, EPRQ is IND-CPA
+query secure. That is, the basic EPRQ and EPRQ+ are
+IND-CPA data and IND-CPA query secure.
+
+VII. P ERFORMANCE A NALYSIS
+In this section, we analyze the performance of our basic
+EPRQ and EPRQ+ schemes theoretically and experimentally.
+A. Theoretical Analysis
+We analyze the computation and storage costs of
+the basic EPRQ, EPRQ+, and the comparison schemes
+SKSE and PRSQ in Table II. As for computation cost,
+we mainly consider several time-consuming operations,
+such as ASHVE.KeyGen (SHVE.KeyGen) algorithm,
+ASHVE.Enc (SHVE.Enc) algorithm, ASHVE.Query
+(SHVE.Query) algorithm, kNN.EncD algorithm, kNN.EncQ
+algorithm, kNN.Cal algorithm, binary conversion algorithm
+(binary conversion algorithm with low storage), prefix code
+algorithm, encode algorithm of PRSQ, ciphertext conversion
+algorithm of PRSQ, constructing bloom filter algorithm
+and constructing trees algorithm. Let TASHVE.KeyGen
+(TSHVE.KeyGen ), TASHVE.Enc (TSHVE.Enc ), TASHVE.Query
+(TSHVE.Query ), TkNN.EncD , TkNN.EncQ , TkNN.Cal , Tbincon
+(Tbincon+ ), Tprecode , Tencode , Tconvert , TBF and Ttree represent
+the corresponding time complexity, respectively. As for
+storage cost, without losing generality, we assume that the
+size of each ciphertext bit in SKSE, PRSQ and our EPRQs
+is |X |, |Y |, and |Z |, respectively.
+In IndexBuild, the basic EPRQ first converts each data
+to a fixed length binary string, and then encrypts the binary
+string using ASHVE.Enc, which costs Tbincon and TASHVE.Enc
+respectively. Since the dataset contains n data, the above operation needs to be repeated n times and the total computation
+costs is n·(Tbincon +TASHVE.Enc ), and its corresponding storage
+cost is n · (m ′ + t) · |Z |. In EPRQ+, the improved conversion
+method with low storage is used, and the binary tree is
+constructed for the dataset. Then, ASHVE.Enc is used to
+encrypt the binary strings of each node in the binary tree. The
+total computation cost is n·Tbincon+ +Ttree +|Tree|·TASHVE.Enc ,
+and its corresponding storage cost is |Tree| · (m ′′ + t) · |Z |.
+In TokenGen, the basic EPRQ first divides the query range
+into k sub-ranges, converts each sub-range into a binary string,
+and uses ASHVE.KeyGen to encrypt, which costs Tbincon and
+k · TASHVE.KeyGen respectively. The only difference between
+the basic EPRQ and EPRQ+ is the conversion method of
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9096
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+TABLE II
+T HEORETICAL C OMPUTATION AND S TORAGE C OSTS IN D IFFERENT S CHEMES
+
+sub-range. The low storage conversion method is used by
+EPRQ+ and costs Tbincon+ . In addition, their corresponding
+storage costs are both k · (|S ′ | + 2) · |Z |. In Query, the
+basic EPRQ uses ASHVE.Query to match each data and each
+sub-range one by one, and the total cost is n · k · TASHVE.Query .
+EPRQ+ utilizes tree structures to speed up retrieval, which
+costs logn · k · TASHVE.Query .
+B. Experimental Tests
+Our schemes are implemented in C++.1 The security
+parameter of the Symmetric-key Hidden Vector Encryption is
+set to λ = 128. The experiments are run on a machine with
+Intel Core CPU i7-9700 3.00GHz and 16 GB RAM. Each
+experimental result is the average of 10 trials. To demonstrate
+the feasibility of our schemes, we compare the basic EPRQ,
+EPRQ+, SKSE and PRSQ. SKSE uses the traditional prefix
+encode to implement query, and maps the prefix family of
+the data and the prefix elements of the query range to
+two bloom filters respectively, and then encrypts the bloom
+filters, and finally matches two bloom filters to realize the
+range query. PRSQ encodes the concrete number values of
+objects and query ranges into vectors directly, and encrypts
+the vectors using matrix multiplication. Then, PRSQ calculates
+the multiplication of encrypted matrixes and judges the size
+relationship between the product and 0 to deduce whether the
+object is included in the query range.
+Fig. 9a and Fig. 9b show the variety of IndexBuild time
+and size for the above four schemes as the number of data
+increases. Note that the curve of PRSQ varies refer to the
+right Y-axis, and the curves of other schemes vary refer to the
+left Y-axis in Fig. 9b. Fig. 9c shows the variety of IndexBuild
+time and size of EPRQ+ as the length of the split binary
+(s) increases, where the curve of IndexBuild time varies
+refer to the left Y-axis, and the curve of IndexBuild size
+varies refer to the right Y-axis. In Fig. 9a, we can see that
+the IndexBuild times of the four schemes increase with the
+number of data increases. SKSE uses bloom filter to realize
+query, and constructs quadtree to speed up query. In order to
+reduce the false positive that bloom filter cannot avoid, SKSE
+needs to construct a long enough bloom filter. Therefore,
+SKSE requires the longest IndexBuild time. At the same
+1 https://github.com/LYRdou/EPRQ
+
+time, EPRQ+ takes the least amount of IndexBuild time.
+Although EPRQ+ constructing a binary tree for the dataset
+will increase the encryption time, EPRQ+ reduces the final
+encrypted binary length by splitting the binary of each data.
+Therefore, EPRQ+ requires less IndexBuild time than the
+basic EPRQ. In Fig. 9b, we can see that the IndexBuild sizes
+of the four schemes also increase with the number of data
+increases. At the same time, EPRQ+ occupies the smallest
+index size. As can be seen from Fig. 9c, the IndexBuild time
+and size of PBKS+ increase as the length of the split binary.
+The length of the final encrypted binary string grows linearly
+with the length of the split binary. The smaller the length of
+the split binary, the smaller the length of the converted binary
+string, and the smaller the length of the final encrypted binary
+string.
+In EPRQ+, s refers to the length of the split sub-binary.
+By splitting the m-bit binary into s-bit binary, the storage sizes
+of index and token will be reduced. However, as we can see
+from the specific construction of basic EPRQ.TokenGen, split
+operation will increase the number of positions that need to be
+matched in Query. For example, when q = [4, 5] = (010*),
+EPRQ.Query needs to match four positions. Once q is split,
+q = [4, 5] = (010*) = (01)(0*), EPRQ+.Query needs to
+match five positions. Therefore, split operation can reduce the
+storage costs of index and token, but increase the query time.
+At the same time, with the decrease of s, the matching position
+of EPRQ+.Query is gradually increased, and the storage costs
+of index and token is gradually reduced. Therefore, we need to
+find a balance between storage cost and query time. As shown
+in Fig. 9, when m = 8, the query time of s = 4 is the smallest.
+Meanwhile, compared with basic EPRQ, when s = 4, EPRQ+
+requires less index and token storage costs. Therefore, for
+various considerations, we set s = 4 for the other experiments.
+Fig. 9d and 9e show the varieties of TokenGen time and
+size for the four schemes as the number of data increase
+respectively. Note that the curves of basic EPRQ and EPRQ+
+vary refer to the left Y-axis, and the curves of SKSE and PRSQ
+vary refer to the right Y-axis in Fig. 9d, the curve of PRSQ
+varies refer to the right Y-axis, and the curves of other schemes
+vary refer to the left Y-axis in Fig. 9e. Since PRSQ encodes
+concrete number values of object and query range into vectors
+directly, PRSQ does not have the limitations of total query
+range. As a result, we only show the variety of TokenGen
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+Fig. 9.
+
+9097
+
+Practical performance analysis.
+
+time and size for our two schemes and SKSE as the query
+range increase in Fig. 9g and 9f, respectively. Note that the
+curves of basic EPRQ and EPRQ+ vary refer to the left Yaxis, and the curve of SKSE varies refer to the right Y-axis in
+Fig. 9d. Fig. 9h shows the varieties of TokenGen time and size
+of EPRQ+ as the length of the split binary increases, where
+the curve of TokenGen time varies refer to the left Y-axis,
+and the curve of TokenGen size varies refer to the right Yaxis. In Fig. 9d and 9e, we can see that the TokenGen times
+and sizes of four schemes do not change with the number
+of data. However, EPRQ+ requires more TokenGen time
+than the basic EPRQ, because EPRQ+ adds the split phase to
+TokenGen phase compared to the basic EPRQ. EPRQ+ needs
+to first split binary, then converts each split binary, and finally
+encrypts them, which will take too much time. Nevertheless,
+the TokenGen time of EPRQ+ is still much smaller than
+SKSE and PRSQ. In addition, compared to the basic EPRQ,
+EPRQ+ needs to occupy more memory due to more matched
+positions generated by split. However, the TokenGen sizes of
+the basic EPRQ and EPRQ+ are still much smaller than SKSE
+and PRSQ. Then, as can be seen from Fig. 9f, the TokenGen
+
+times of our schemes stay the same and then increase as the
+query range increases. This is because when the query range
+is 4%, the query range needs to be converted into two subranges, thus increasing the TokenGen time. In addition, the
+TokenGen sizes of our schemes decrease and then increase as
+the query range increases in Fig. 9g. This is because, as the
+query range increases, the ‘*’ in token gradually increases,
+and the matched positions gradually decrease, thus decreasing
+the TokenGen size. And when the query range is 4%, the
+query range needs to be converted into two sub-ranges, thus
+increasing the TokenGen size. However, the TokenGen times
+and sizes of the basic EPRQ and EPRQ+ are still much
+smaller than SKSE. In Fig. 9h, we can see that the TokenGen
+time and size of EPRQ+ gradually decrease as the length of
+the split binary increases. As the length of the split binary
+increases, the fewer split operations required by EPRQ+, the
+fewer positions need to be matched, the smaller the TokenGen
+time and size of EPRQ+.
+Fig. 9i and 9j show the variety of Query time for the
+above schemes as the number of data and query range increase
+respectively. Fig. 9k shows the variety of Query time of
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+9098
+
+IEEE TRANSACTIONS ON INFORMATION FORENSICS AND SECURITY, VOL. 19, 2024
+
+EPRQ+ as the length of the split binary increases. In Fig. 9i,
+we can see that the Query times of all four schemes increase
+with the number of data. The basic EPRQ is the linear search,
+that is, the basic EPRQ needs to query each data one by one,
+while the other schemes construct the tree structure. Therefore,
+the Query time of the basic EPRQ is growing much faster than
+other schemes. At the same time, EPRQ+ requires minimal
+Query time. As can be seen from Fig. 9j, the Query time
+of the basic EPRQ is the longest, and that of EPRQ+ is the
+shortest. At the same time, the Query times of the basic EPRQ
+and EPRQ+ have a significant increase at 4% query range.
+In the Query phase, CSP needs to query each sub-range one
+by one. When the query range is 4%, the number of sub-ranges
+is increased accordingly. As a result, the Query time increases
+accordingly. In Fig. 9k, we can see that the Query time of
+EPRQ+ decreases and then increases as the length of the split
+binary increases. With the increase of the split binary length,
+although the total length of the encrypted binary decreases, the
+encryption positions in ASHVE.KeyGen may be increased
+because of the split operation, that is, |S| increases, which
+will lead to the increase of Query time. As can be seen from
+Fig. 9k, when the length of split binary (s) is equal to 4, the
+Query time of EPRQ+ is the least. Therefore, when s = 4,
+EPRQ+ requires less storage cost and less Query time, so we
+choose s = 4 in Fig. 9c, 9h and 9k.
+VIII. C ONCLUSION
+In this paper, we propose two efficient and privacypreserving range query schemes. Firstly, we utilize REncoder
+to transform the data and implement retrieve simultaneously.
+Then, we use the improved ASHVE to encrypt the converted
+binary and propose the basic EPRQ scheme. In addition,
+an improved scheme EPRQ+ is proposed through split operation and tree structure, which further reduces the storage
+requirement and speeds up the query speed of the basic
+EPRQ. We have rigorously analyzed the security of our EPRQ
+schemes under IND-CPA. Finally, the performance analysis
+shows that our EPRQ schemes can realize efficient range
+query. In the future, we would like to construct dynamic range
+query scheme that can guarantee forward/backward privacy.
+R EFERENCES
+[1] N. Abbas, Y. Zhang, A. Taherkordi, and T. Skeie, “Mobile edge computing: A survey,” IEEE Internet Things J., vol. 5, no. 1, pp. 450–465,
+Feb. 2018, doi: 10.1109/JIOT.2017.2750180.
+[2] D. Liu, L. Khoukhi, and A. Hafid, “Prediction-based mobile data offloading in mobile cloud computing,” IEEE Trans. Wireless Commun., vol. 17,
+no. 7, pp. 4660–4673, Jul. 2018, doi: 10.1109/TWC.2018.2829513.
+[3] D. M. Bamasoud, A. S. Al-Dossary, N. M. Al-Harthy,
+R. A. Al-Shomrany, G. S. Alghamdi, and R. O. Algahmdi, “Privacy
+and security issues in cloud computing: A survey paper,” in
+Proc. Int. Conf. Inf. Technol. (ICIT), Jul. 2021, pp. 387–392, doi:
+10.1109/ICIT52682.2021.9491632.
+[4] J. Chavan, R. Patil, S. Patil, V. Gutte, and S. Karande, “A survey on
+security threats in cloud computing service models,” in Proc. 6th Int.
+Conf. Intell. Comput. Control Syst. (ICICCS), May 2022, pp. 574–580,
+doi: 10.1109/ICICCS53718.2022.9788148.
+[5] X. Wang and J. Ma, “Cloud-network-end collaborative security
+for wireless networks: Architecture, mechanisms, and applications,”
+Tsinghua Sci. Technol., vol. 30, no. 1, pp. 18–33, Feb. 2025, doi:
+10.26599/tst.2023.9010158.
+
+[6] A. X. Liu and F. Chen, “Privacy preserving collaborative enforcement of firewall policies in virtual private networks,” IEEE Trans.
+Parallel Distrib. Syst., vol. 22, no. 5, pp. 887–895, May 2011, doi:
+10.1109/TPDS.2010.155.
+[7] X. Wang, J. Ma, F. Li, X. Liu, Y. Miao, and R. H. Deng, “Enabling
+efficient spatial keyword queries on encrypted data with strong security
+guarantees,” IEEE Trans. Inf. Forensics Security, vol. 16, pp. 4909–4923,
+2021, doi: 10.1109/TIFS.2021.3118880.
+[8] X. Wang, J. Ma, X. Liu, Y. Miao, Y. Liu, and R. H. Deng, “Forward/backward and content private DSSE for spatial keyword queries,”
+IEEE Trans. Dependable Secure Comput., vol. 20, no. 4, pp. 3358–3370,
+2023, doi: 10.1109/TDSC.2022.3205670.
+[9] S. Zhang, S. Ray, R. Lu, Y. Guan, Y. Zheng, and J. Shao, “Efficient and privacy-preserving spatial keyword similarity query over
+encrypted data,” IEEE Trans. Dependable Secure Comput., vol. 20, no. 5,
+pp. 3770–3786, Sep./Oct. 2023, doi: 10.1109/TDSC.2022.3227141.
+[10] X. Zhao, J. Yu, X. Ge, and R. Hao, “Towards efficient secure Boolean
+range query over encrypted spatial data,” Comput. Secur., vol. 136,
+Jan. 2024, Art. no. 103544, doi: 10.1016/j.cose.2023.103544.
+[11] R. Bayer and E. McCreight, “Organization and maintenance of large
+ordered indices,” in Proc. ACM SIGFIDET (Now SIGMOD) Workshop
+Data Description, Access Control (SIGFIDET), Nov. 1970, p. 107 141,
+doi: 10.1145/1734663.1734671.
+[12] W. Zhang, Z. Yan, Y. Lin, C. Zhao, and L. Peng, “A high
+throughput B+tree for SIMD architectures,” IEEE Trans. Parallel Distrib. Syst., vol. 31, no. 3, pp. 707–720, Mar. 2020, doi:
+10.1109/TPDS.2019.2942918.
+[13] W. K. Wong, D. W. Cheung, B. Kao, and N. Mamoulis, “Secure
+kNN computation on encrypted databases,” in Proc. ACM SIGMOD
+Int. Conf. Manage. Data (SIGMOD), Jun. 2009, pp. 139–152, doi:
+10.1145/1559845.1559862.
+[14] Q. Tong, Y. Miao, H. Li, X. Liu, and R. H. Deng, “Privacy-preserving
+ranked spatial keyword query in mobile cloud-assisted fog computing,”
+IEEE Trans. Mobile Comput., vol. 22, no. 6, pp. 3604–3618, Jun. 2023,
+doi: 10.1109/TMC.2021.3134711.
+[15] Z. Gong, J. Li, Y. Lin, J. Wei, and C. Lancine, “Efficient privacypreserving geographic keyword Boolean range query over encrypted
+spatial data,” IEEE Syst. J., vol. 17, no. 1, pp. 455–466, Mar. 2023,
+doi: 10.1109/JSYST.2022.3183153.
+[16] H. Delfs and H. Knebl, Introduction to Cryptography: Principles
+and Applications. Berlin, Germany: Springer, 2015, pp. 1–508, doi:
+10.1007/978-3-662-47974-2.
+[17] W. Lin, K. Wang, Z. Zhang, and H. Chen, “Revisiting security risks
+of asymmetric scalar product preserving encryption and its variants,” in
+Proc. IEEE 37th Int. Conf. Distrib. Comput. Syst. (ICDCS), Jun. 2017,
+pp. 1116–1125, doi: 10.1109/ICDCS.2017.20.
+[18] Y. Guan, R. Lu, Y. Zheng, S. Zhang, J. Shao, and G. Wei, “Achieving privacy-preserving discrete frchet distance range queries,” IEEE
+Trans. Dependable Secure Comput., vol. 20, no. 3, pp. 2097–2110,
+May/Jun. 2023, doi: 10.1109/TDSC.2022.3171980.
+[19] F. Wang, H. Zhu, G. He, R. Lu, Y. Zheng, and H. Li, “Efficient and privacy-preserving arbitrary polygon range query scheme
+over dynamic and time-series location data,” IEEE Trans. Inf. Forensics Security, vol. 18, pp. 3414–3429, 2023, doi: 10.1109/TIFS.2023.
+3282133.
+[20] Y. Miao, C. Xu, Y. Zheng, X. Liu, X. Meng, and R. H. Deng, “Efficient
+and secure spatial range query over large-scale encrypted data,” in
+Proc. IEEE 43rd Int. Conf. Distrib. Comput. Syst. (ICDCS), Jul. 2023,
+pp. 1–11, doi: 10.1109/ICDCS57875.2023.00055.
+[21] R. Zhang, R. Xue, and L. Liu, “Searchable encryption for healthcare
+clouds: A survey,” IEEE Trans. Services Comput., vol. 11, no. 6,
+pp. 978–996, Nov. 2018, doi: 10.1109/TSC.2017.2762296.
+[22] J. Qiu, Z. Tian, C. Du, Q. Zuo, S. Su, and B. Fang, “A survey on
+access control in the age of Internet of Things,” IEEE Internet Things
+J., vol. 7, no. 6, pp. 4682–4696, Jun. 2020, doi: 10.1109/JIOT.2020.
+2969326.
+[23] D. Xiaoding Song, D. Wagner, and A. Perrig, “Practical techniques for
+searches on encrypted data,” in Proc. IEEE Symp. Secur. Privacy. (S&P),
+May 2000, pp. 44–55, doi: 10.1109/SECPRI.2000.848445.
+[24] D. Boneh, G. D. Crescenzo, R. Ostrovsky, and G. Persiano, “Public
+key encryption with keyword search,” in Proc. EUROCRYPT, 2004,
+pp. 506–522, doi: 10.1007/978-3-540-24676-3_30.
+[25] P. Golle, J. Staddon, and B. Waters, “Secure conjunctive keyword search
+over encrypted data,” in Proc. Appl. Cryptogr. Netw. Secur., 2nd Int.
+Conf. (ACNS), Jun. 2004, p. 31 45, doi: 10.1007/978-3-540-24852-1_3.
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+LIANG et al.: EFFICIENT AND PRIVACY-PRESERVING ENCODE-BASED RANGE QUERY
+
+[26] R. Curtmola, J. Garay, S. Kamara, and R. Ostrovsky, “Searchable
+symmetric encryption: Improved definitions and efficient constructions,
+J. Comput. Secur., vol. 19, no. 5, pp. 895–934, Oct. 2011, doi:
+10.1145/1180405.1180417.
+[27] Q. Tong, X. Li, Y. Miao, X. Liu, J. Weng, and R. H. Deng,
+“Privacy-preserving Boolean range query with temporal access control
+in mobile computing,” IEEE Trans. Knowl. Data Eng., vol. 35, no. 5,
+pp. 5159–5172, May 2023, doi: 10.1109/TKDE.2022.3152168.
+[28] Y. Liang, J. Ma, Y. Miao, D. Kuang, X. Meng, and R. H. Deng, “Privacypreserving Bloom filter-based keyword search over large encrypted cloud
+data,” IEEE Trans. Comput., vol. 72, no. 11, pp. 3086–3098, Nov. 2023,
+doi: 10.1109/TC.2023.3285103.
+[29] X. Li et al., “VRFMS: Verifiable ranked fuzzy multi-keyword search
+over encrypted data,” IEEE Trans. Services Comput., vol. 16, no. 1,
+pp. 698–710, Jan. 2023, doi: 10.1109/TSC.2021.3140092.
+[30] W. Lu, A. Swaminathan, A. L. Varna, and M. Wu, “Enabling search
+over encrypted multimedia databases,” in Proc. Media Forensics Secur.
+(SPIE), Feb. 2009, Art. no. 725418, doi: 10.1117/12.806980.
+[31] Y. Li et al., “DVREI: Dynamic verifiable retrieval over encrypted
+images,” IEEE Trans. Comput., vol. 71, no. 8, pp. 1755–1769,
+Aug. 2022, doi: 10.1109/TC.2021.3106482.
+[32] L. Zhu, J. Song, Z. Yang, W. Huang, C. Zhang, and W. Yu,
+“DAP2 CMH: Deep adversarial privacy-preserving cross-modal hashing,”
+Neural Process. Lett., vol. 54, no. 4, pp. 2549–2569, Aug. 2022, doi:
+10.1007/s11063-021-10447-4.
+[33] F. Song, Z. Qin, L. Xue, J. Zhang, X. Lin, and X. Shen, “Privacypreserving keyword similarity search over encrypted spatial data in cloud
+computing,” IEEE Internet Things J., vol. 9, no. 8, pp. 6184–6198,
+Apr. 2022, doi: 10.1109/JIOT.2021.3110300.
+[34] Y. Miao et al., “Efficient privacy-preserving spatial range query over
+outsourced encrypted data,” IEEE Trans. Inf. Forensics Security, vol. 18,
+pp. 3921–3933, 2023, doi: 10.1109/TIFS.2023.3288453.
+[35] S. Lai et al., “Result pattern hiding searchable encryption for conjunctive queries,” in Proc. ACM SIGSAC Conf. Comput. Commun. Secur.,
+Oct. 2018, pp. 745–762, doi: 10.1145/3243734.3243753.
+[36] J. Wang and S. S. M. Chow, “Forward and backward-secure rangesearchable symmetric encryption,” Proc. Privacy Enhancing Technol.,
+vol. 2022, no. 1, pp. 28–48, Jan. 2022, doi: 10.2478/popets-2022-0003.
+[37] Z. Wang et al., “REncoder: A space-time efficient range filter with local
+encoder,” in Proc. IEEE 39th Int. Conf. Data Eng. (ICDE), Apr. 2023,
+pp. 2036–2049, doi: 10.1109/icde55515.2023.00158.
+[38] H. Zhang et al., “SuRF: Practical range query filtering with fast succinct
+tries,” in Proc. ACM SIGMOD Int. Conf. Manage. Data, May 2018,
+pp. 323–336, doi: 10.1145/3183713.3196931.
+[39] S. Luo, S. Chatterjee, R. Ketsetsidis, N. Dayan, W. Qin, and S. Idreos,
+“Rosetta: A robust space-time optimized range filter for key-value
+stores,” in Proc. ACM SIGMOD Int. Conf. Manage. Data, Jun. 2020,
+pp. 2071–2086, doi: 10.1145/3318464.3389731.
+
+Yanrong Liang received the M.S. degree from
+the Department of Applied Mathematics, Shaanxi
+Normal University, Xi’an, China, in 2021. She
+is currently pursuing the Ph.D. degree with the
+Department of Cyber Engineering, Xidian University, Xi’an. Her research interests include cloud
+computing security and applied cryptography.
+
+9099
+
+Jianfeng Ma (Member, IEEE) received the M.E. and
+Ph.D. degrees in computer software and communications engineering from Xidian University, China,
+in 1988 and 1995, respectively. He is currently a
+Professor and the Ph.D. Supervisor with the School
+of Cyber Engineering, Xidian University. He is also
+the Director of Shaanxi Key Laboratory of Network
+and System Security. His research interests include
+information and network security, coding theory, and
+cryptography.
+
+Yinbin Miao (Member, IEEE) received the B.E.
+degree from the Department of Telecommunication
+Engineering, Jilin University, Changchun, China,
+in 2011, and the Ph.D. degree from the Department of Telecommunication Engineering, Xidian
+University, Xi’an, China, in 2016. He is currently a
+Post-Doctoral Researcher with Nanyang Technological University from September 2018 to September
+2019 and the City University of Hong Kong from
+December 2019 to December 2021. He is currently
+an Associate Professor with the Department of
+Cyber Engineering, Xidian University. His research interests include information security and applied cryptography.
+
+Yuan Su received the master’s degree from the
+School of Mathematics and Statistics, Shaanxi Normal University, Xi’an, China, in 2021. He is
+currently pursuing the Ph.D. degree with the School
+of Cyber Science and Engineering, Xi’an Jiaotong
+University, Xi’an. His research interests include network security and cryptography.
+
+Robert H. Deng (Fellow, IEEE) has been the
+AXA Chair Professor of cybersecurity and a Professor of information systems with the School of
+Information Systems, Singapore Management University, since 2004. His research interests include
+data security and privacy, multimedia security, and
+network and system security. He has received the
+Distinguished Paper Award (NDSS 2012), the Best
+Paper Award (CMS 2012), and the Best Journal
+Paper Award (IEEE Communications Society 2017).
+He has served on the editorial boards of many
+international journals, including IEEE T RANSACTIONS ON I NFORMATION
+F ORENSICS AND S ECURITY and IEEE T RANSACTIONS ON D EPENDABLE
+AND S ECURE C OMPUTING .
+
+Authorized licensed use limited to: Thammasat University. Downloaded on April 02,2026 at 13:41:56 UTC from IEEE Xplore. Restrictions apply.
+
+

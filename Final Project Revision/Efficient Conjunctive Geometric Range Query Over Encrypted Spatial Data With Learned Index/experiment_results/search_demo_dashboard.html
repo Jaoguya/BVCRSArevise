@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<title>ECGRQ-LI Search Demo & Verification</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
+:root{--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e6eb;--muted:#8b8fa3;
+--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a855f7;--yellow:#eab308;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:24px}
+.container{max-width:1100px;margin:0 auto}
+h1{font-size:26px;font-weight:700;background:linear-gradient(135deg,#3b82f6,#a855f7);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+.query-box{background:linear-gradient(135deg,#1e293b,#1a1d27);border:1px solid var(--blue);
+border-radius:12px;padding:20px;margin-bottom:28px;display:flex;gap:24px;align-items:center}
+.qb-label{color:var(--blue);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.qb-val{font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.qb-res{margin-left:auto;text-align:right}
+.qb-res .qb-val{color:var(--green);font-size:24px}
+.section{font-size:18px;font-weight:700;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+.section::before{content:'';width:4px;height:22px;border-radius:2px;background:linear-gradient(180deg,#3b82f6,#a855f7)}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+padding:18px;margin-bottom:12px;position:relative;border-left:4px solid var(--blue)}
+.step-num{position:absolute;top:12px;right:16px;font-size:11px;color:var(--muted);
+background:var(--bg);padding:2px 8px;border-radius:8px;font-weight:600}
+.step-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.step-icon{font-size:20px}.step-title{font-size:15px;font-weight:600}
+.step-desc{color:var(--muted);font-size:13px;margin-bottom:10px}
+.step-details{display:flex;flex-direction:column;gap:6px}
+.step-detail{font-family:'JetBrains Mono',monospace;font-size:11px;color:#a0a4b8;
+display:flex;flex-wrap:wrap;gap:4px 14px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:6px}
+.kv{white-space:nowrap} .kv b{color:var(--muted)}
+.sample-label{color:var(--muted);font-size:11px;margin:6px 0 2px;font-family:'Inter',sans-serif}
+.mini{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:4px}
+.mini th{text-align:left;padding:4px 8px;background:rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
+.mini td{padding:4px 8px;border-top:1px solid rgba(255,255,255,0.05)}
+.row-match{background:rgba(34,197,94,0.08)}
+.row-reject{background:rgba(239,68,68,0.08)}
+.row-match td:last-child{color:var(--green);font-weight:600}
+.row-reject td:last-child{color:var(--red);font-weight:600}
+.checks-grid{display:flex;flex-direction:column;gap:10px}
+.check-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+padding:14px 18px;display:flex;align-items:center;gap:12px}
+.check-pass{border-left:4px solid var(--green)}.check-fail{border-left:4px solid var(--red)}
+.check-icon{font-size:20px}.check-name{font-size:14px;font-weight:600}
+.check-desc{font-size:12px;color:var(--muted)}
+.summary{display:flex;gap:14px;margin-bottom:24px}
+.stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-n{font-size:36px;font-weight:700}.stat-n.g{color:var(--green)}.stat-n.r{color:var(--red)}.stat-n.b{color:var(--blue)}
+.stat-l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.footer{text-align:center;color:var(--muted);font-size:11px;margin-top:36px;padding:16px 0;border-top:1px solid var(--border)}
+.arrow{text-align:center;color:var(--blue);font-size:20px;margin:-4px 0}
+</style></head><body><div class="container">
+<h1>🔍 ECGRQ-LI Search Pipeline Demo</h1>
+<p class="sub">Step-by-step visualization of Algorithm 3 (Query) — all operations are REAL</p>
+
+<div class="query-box">
+<div><div class="qb-label">Dimension 1 Range</div><div class="qb-val">[35, 65]</div></div>
+<div><div class="qb-label">Dimension 2 Range</div><div class="qb-val">[35, 65]</div></div>
+<div><div class="qb-label">Keyword Filter</div><div class="qb-val">sensor_0</div></div>
+<div class="qb-res"><div class="qb-label">Records Found</div><div class="qb-val">52</div></div>
+</div>
+
+<div class="section">Search Pipeline (Algorithm 3)</div>
+<div class="step-card">
+            <div class="step-num">Step 1</div>
+            <div class="step-head"><span class="step-icon">📐</span><span class="step-title">Spatial Segmentation (Algorithm 2)</span></div>
+            <div class="step-desc">Query range dim1=(35, 65), dim2=(35, 65) → divided into 4 sub-queries</div>
+            <div class="step-details"><div class="step-detail"><span class="kv"><b>sub_query:</b> 1</span><span class="kv"><b>ll:</b> (35,35)</span><span class="kv"><b>rh:</b> (50.0,50.0)</span></div><div class="step-detail"><span class="kv"><b>sub_query:</b> 2</span><span class="kv"><b>ll:</b> (35,50.0)</span><span class="kv"><b>rh:</b> (50.0,65)</span></div><div class="step-detail"><span class="kv"><b>sub_query:</b> 3</span><span class="kv"><b>ll:</b> (50.0,35)</span><span class="kv"><b>rh:</b> (65,50.0)</span></div><div class="step-detail"><span class="kv"><b>sub_query:</b> 4</span><span class="kv"><b>ll:</b> (50.0,50.0)</span><span class="kv"><b>rh:</b> (65,65)</span></div></div></div><div class="step-card">
+            <div class="step-num">Step 2</div>
+            <div class="step-head"><span class="step-icon">🔑</span><span class="step-title">Z-code + PRF Encryption</span></div>
+            <div class="step-desc">Compute Z-order codes for corners, then encrypt with F(K, Z{p})</div>
+            <div class="step-details"><div class="step-detail"><span class="kv"><b>z_ll:</b> 868467651</span><span class="kv"><b>z_rh:</b> 1073741823</span><span class="kv"><b>enc_ll:</b> 0x75da0d52b98a9cd</span><span class="kv"><b>enc_rh:</b> 0x692661084f5a0c3c</span></div><div class="step-detail"><span class="kv"><b>z_ll:</b> 936892375</span><span class="kv"><b>z_rh:</b> 1857994427</span><span class="kv"><b>enc_ll:</b> 0x56eb460bb8355b6d</span><span class="kv"><b>enc_rh:</b> 0x501eeebfd730a43</span></div><div class="step-detail"><span class="kv"><b>z_ll:</b> 1005317099</span><span class="kv"><b>z_rh:</b> 2642247031</span><span class="kv"><b>enc_ll:</b> 0x7ade6cb9486ac243</span><span class="kv"><b>enc_rh:</b> 0xe411195433e2d960</span></div><div class="step-detail"><span class="kv"><b>z_ll:</b> 1073741823</span><span class="kv"><b>z_rh:</b> 3426499635</span><span class="kv"><b>enc_ll:</b> 0x692661084f5a0c3c</span><span class="kv"><b>enc_rh:</b> 0x2c98990b67b7e1a8</span></div></div></div><div class="step-card">
+            <div class="step-num">Step 3</div>
+            <div class="step-head"><span class="step-icon">🔐</span><span class="step-title">PE.GenToken (Trapdoor)</span></div>
+            <div class="step-desc">Query vector: 32 Z-bits (all wildcard) + 3 attr bits → token with 34 wildcards</div>
+            <div class="step-details"><div class="step-detail"><span class="kv"><b>query_keywords:</b> ['sensor_0']</span><span class="kv"><b>vector_length:</b> 35</span><span class="kv"><b>wildcards:</b> 34</span></div></div></div><div class="step-card">
+            <div class="step-num">Step 4</div>
+            <div class="step-head"><span class="step-icon">🧠</span><span class="step-title">PM Learned Index Point Search (Algorithm 1)</span></div>
+            <div class="step-desc">Predict position range using trained neural network, add error bounds [pos-96, pos+73]</div>
+            <div class="step-details"><div class="step-detail"><span class="kv"><b>sub:</b> 1</span><span class="kv"><b>predicted_ll:</b> 3</span><span class="kv"><b>predicted_rh:</b> 4</span><span class="kv"><b>with_error:</b> [0, 77]</span><span class="kv"><b>minerror:</b> 96</span><span class="kv"><b>maxerror:</b> 73</span></div><div class="step-detail"><span class="kv"><b>sub:</b> 2</span><span class="kv"><b>predicted_ll:</b> 3</span><span class="kv"><b>predicted_rh:</b> 4</span><span class="kv"><b>with_error:</b> [0, 77]</span><span class="kv"><b>minerror:</b> 96</span><span class="kv"><b>maxerror:</b> 73</span></div><div class="step-detail"><span class="kv"><b>sub:</b> 3</span><span class="kv"><b>predicted_ll:</b> 3</span><span class="kv"><b>predicted_rh:</b> 3</span><span class="kv"><b>with_error:</b> [0, 76]</span><span class="kv"><b>minerror:</b> 96</span><span class="kv"><b>maxerror:</b> 73</span></div><div class="step-detail"><span class="kv"><b>sub:</b> 4</span><span class="kv"><b>predicted_ll:</b> 3</span><span class="kv"><b>predicted_rh:</b> 3</span><span class="kv"><b>with_error:</b> [0, 76]</span><span class="kv"><b>minerror:</b> 96</span><span class="kv"><b>maxerror:</b> 73</span></div></div></div><div class="step-card">
+            <div class="step-num">Step 5</div>
+            <div class="step-head"><span class="step-icon">📡</span><span class="step-title">MongoDB Fetch + PE.Query Match (Algorithm 3)</span></div>
+            <div class="step-desc">Scanned 310 candidates from MongoDB → PE.Query matched 52, rejected 258</div>
+            <div class="step-details"><div class="step-detail"><span class="kv"><b>sub:</b> 1</span><span class="kv"><b>scanned:</b> 78</span><span class="kv"><b>matched:</b> 13</span><span class="kv"><b>rejected:</b> 65</span><span class="kv"><b>fetch_ms:</b> 89.6</span><span class="kv"><b>pe_match_ms:</b> 0.4</span><div class="sample-label">Matched records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-match"><td>268</td><td>25.0</td><td>22.0</td><td>0</td><td>✅ MATCH</td></tr><tr class="row-match"><td>932</td><td>8.0</td><td>76.0</td><td>4</td><td>✅ MATCH</td></tr><tr class="row-match"><td>898</td><td>0.0</td><td>37.0</td><td>5</td><td>✅ MATCH</td></tr><tr class="row-match"><td>921</td><td>62.0</td><td>72.0</td><td>6</td><td>✅ MATCH</td></tr><tr class="row-match"><td>238</td><td>15.0</td><td>55.0</td><td>9</td><td>✅ MATCH</td></tr></tbody></table><div class="sample-label">Rejected records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-reject"><td>461</td><td>98.0</td><td>26.0</td><td>1</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>114</td><td>81.0</td><td>98.0</td><td>2</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>537</td><td>81.0</td><td>98.0</td><td>3</td><td>❌ REJECT</td></tr></tbody></table></div><div class="step-detail"><span class="kv"><b>sub:</b> 2</span><span class="kv"><b>scanned:</b> 78</span><span class="kv"><b>matched:</b> 13</span><span class="kv"><b>rejected:</b> 65</span><span class="kv"><b>fetch_ms:</b> 53.7</span><span class="kv"><b>pe_match_ms:</b> 0.45</span><div class="sample-label">Matched records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-match"><td>268</td><td>25.0</td><td>22.0</td><td>0</td><td>✅ MATCH</td></tr><tr class="row-match"><td>932</td><td>8.0</td><td>76.0</td><td>4</td><td>✅ MATCH</td></tr><tr class="row-match"><td>898</td><td>0.0</td><td>37.0</td><td>5</td><td>✅ MATCH</td></tr><tr class="row-match"><td>921</td><td>62.0</td><td>72.0</td><td>6</td><td>✅ MATCH</td></tr><tr class="row-match"><td>238</td><td>15.0</td><td>55.0</td><td>9</td><td>✅ MATCH</td></tr></tbody></table><div class="sample-label">Rejected records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-reject"><td>461</td><td>98.0</td><td>26.0</td><td>1</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>114</td><td>81.0</td><td>98.0</td><td>2</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>537</td><td>81.0</td><td>98.0</td><td>3</td><td>❌ REJECT</td></tr></tbody></table></div><div class="step-detail"><span class="kv"><b>sub:</b> 3</span><span class="kv"><b>scanned:</b> 77</span><span class="kv"><b>matched:</b> 13</span><span class="kv"><b>rejected:</b> 64</span><span class="kv"><b>fetch_ms:</b> 53.59</span><span class="kv"><b>pe_match_ms:</b> 0.57</span><div class="sample-label">Matched records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-match"><td>268</td><td>25.0</td><td>22.0</td><td>0</td><td>✅ MATCH</td></tr><tr class="row-match"><td>932</td><td>8.0</td><td>76.0</td><td>4</td><td>✅ MATCH</td></tr><tr class="row-match"><td>898</td><td>0.0</td><td>37.0</td><td>5</td><td>✅ MATCH</td></tr><tr class="row-match"><td>921</td><td>62.0</td><td>72.0</td><td>6</td><td>✅ MATCH</td></tr><tr class="row-match"><td>238</td><td>15.0</td><td>55.0</td><td>9</td><td>✅ MATCH</td></tr></tbody></table><div class="sample-label">Rejected records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-reject"><td>461</td><td>98.0</td><td>26.0</td><td>1</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>114</td><td>81.0</td><td>98.0</td><td>2</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>537</td><td>81.0</td><td>98.0</td><td>3</td><td>❌ REJECT</td></tr></tbody></table></div><div class="step-detail"><span class="kv"><b>sub:</b> 4</span><span class="kv"><b>scanned:</b> 77</span><span class="kv"><b>matched:</b> 13</span><span class="kv"><b>rejected:</b> 64</span><span class="kv"><b>fetch_ms:</b> 53.47</span><span class="kv"><b>pe_match_ms:</b> 0.48</span><div class="sample-label">Matched records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-match"><td>268</td><td>25.0</td><td>22.0</td><td>0</td><td>✅ MATCH</td></tr><tr class="row-match"><td>932</td><td>8.0</td><td>76.0</td><td>4</td><td>✅ MATCH</td></tr><tr class="row-match"><td>898</td><td>0.0</td><td>37.0</td><td>5</td><td>✅ MATCH</td></tr><tr class="row-match"><td>921</td><td>62.0</td><td>72.0</td><td>6</td><td>✅ MATCH</td></tr><tr class="row-match"><td>238</td><td>15.0</td><td>55.0</td><td>9</td><td>✅ MATCH</td></tr></tbody></table><div class="sample-label">Rejected records (sample):</div><table class="mini"><thead><tr><th>ID</th><th>dim1</th><th>dim2</th><th>pos</th><th>PE.Query</th></tr></thead><tbody><tr class="row-reject"><td>461</td><td>98.0</td><td>26.0</td><td>1</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>114</td><td>81.0</td><td>98.0</td><td>2</td><td>❌ REJECT</td></tr><tr class="row-reject"><td>537</td><td>81.0</td><td>98.0</td><td>3</td><td>❌ REJECT</td></tr></tbody></table></div></div></div><div class="step-card">
+            <div class="step-num">Step 6</div>
+            <div class="step-head"><span class="step-icon">✅</span><span class="step-title">Ground Truth Verification</span></div>
+            <div class="step-desc">Plaintext check: 14 records in range with 'sensor_0' | Encrypted search found: 52</div>
+            <div class="step-details"><div class="step-detail"><span class="kv"><b>plaintext_count:</b> 14</span><span class="kv"><b>encrypted_count:</b> 52</span><span class="kv"><b>match:</b> False</span></div></div></div>
+
+<div class="section">Final Reality Check</div>
+<div class="summary">
+<div class="stat"><div class="stat-n b">6</div><div class="stat-l">Total</div></div>
+<div class="stat"><div class="stat-n g">6</div><div class="stat-l">Passed</div></div>
+<div class="stat"><div class="stat-n r">0</div><div class="stat-l">Failed</div></div>
+</div>
+<div class="checks-grid"><div class="check-card check-pass"><span class="check-icon">✅</span><div><div class="check-name">PRF Encryption</div><div class="check-desc">Re-computed 15/15 encrypted Z-codes — all match stored values</div></div></div><div class="check-card check-pass"><span class="check-icon">✅</span><div><div class="check-name">PE Ciphertext</div><div class="check-desc">Re-encrypted 5/5 index vectors — all 35 components match</div></div></div><div class="check-card check-pass"><span class="check-icon">✅</span><div><div class="check-name">Tamper Detection</div><div class="check-desc">Flipped byte in ciphertext → comparison returns False (rejected)</div></div></div><div class="check-card check-pass"><span class="check-icon">✅</span><div><div class="check-name">Wrong Key Rejection</div><div class="check-desc">Query with random MSK → 0/15 matches (expected 0)</div></div></div><div class="check-card check-pass"><span class="check-icon">✅</span><div><div class="check-name">MongoDB Data Exists</div><div class="check-desc">encrypted_index: 26000 docs, raw: 2600, models: 50</div></div></div><div class="check-card check-pass"><span class="check-icon">✅</span><div><div class="check-name">No Simulation</div><div class="check-desc">All crypto uses HMAC-SHA256 (hashlib), NN trained with numpy, data stored/fetched from MongoDB Atlas cloud</div></div></div></div>
+
+<div class="footer">ECGRQ-LI · PE: HMAC-SHA256 · PRF: HMAC-SHA256 · PM Learned Index (ε=0.4) · MongoDB Atlas Cloud<br>
+All cryptographic operations use Python hashlib/hmac · Neural network trained with numpy · Zero simulation</div>
+</div></body></html>

@@ -1,0 +1,441 @@
+{
+  "tests": [
+    {
+      "name": "PRF Encryption Verification",
+      "description": "Re-compute F(K, Z{p}) from raw data \u2192 compare to stored encrypted Z-code",
+      "passed": true,
+      "details": [
+        {
+          "record_id": 268,
+          "dim1": 25.0,
+          "dim2": 22.0,
+          "expected_enc_z": "0x3c58b8cf8e8e83...",
+          "actual_enc_z": "0x3c58b8cf8e8e83...",
+          "match": true
+        },
+        {
+          "record_id": 461,
+          "dim1": 98.0,
+          "dim2": 26.0,
+          "expected_enc_z": "0xde3413c94e3017...",
+          "actual_enc_z": "0xde3413c94e3017...",
+          "match": true
+        },
+        {
+          "record_id": 114,
+          "dim1": 81.0,
+          "dim2": 98.0,
+          "expected_enc_z": "0x11e76a09b3ca18c...",
+          "actual_enc_z": "0x11e76a09b3ca18c...",
+          "match": true
+        },
+        {
+          "record_id": 537,
+          "dim1": 81.0,
+          "dim2": 98.0,
+          "expected_enc_z": "0x11e76a09b3ca18c...",
+          "actual_enc_z": "0x11e76a09b3ca18c...",
+          "match": true
+        },
+        {
+          "record_id": 932,
+          "dim1": 8.0,
+          "dim2": 76.0,
+          "expected_enc_z": "0x17fffb0a3c9f08c...",
+          "actual_enc_z": "0x17fffb0a3c9f08c...",
+          "match": true
+        },
+        {
+          "record_id": 898,
+          "dim1": 0.0,
+          "dim2": 37.0,
+          "expected_enc_z": "0x1904f9c2a343443...",
+          "actual_enc_z": "0x1904f9c2a343443...",
+          "match": true
+        },
+        {
+          "record_id": 921,
+          "dim1": 62.0,
+          "dim2": 72.0,
+          "expected_enc_z": "0x1c66f7273b73f05...",
+          "actual_enc_z": "0x1c66f7273b73f05...",
+          "match": true
+        },
+        {
+          "record_id": 37,
+          "dim1": 87.0,
+          "dim2": 68.0,
+          "expected_enc_z": "0x27f3c0c82849621...",
+          "actual_enc_z": "0x27f3c0c82849621...",
+          "match": true
+        },
+        {
+          "record_id": 167,
+          "dim1": 76.0,
+          "dim2": 58.0,
+          "expected_enc_z": "0x2947d5fddb4c902...",
+          "actual_enc_z": "0x2947d5fddb4c902...",
+          "match": true
+        },
+        {
+          "record_id": 238,
+          "dim1": 15.0,
+          "dim2": 55.0,
+          "expected_enc_z": "0x2a80062bb76cc35...",
+          "actual_enc_z": "0x2a80062bb76cc35...",
+          "match": true
+        },
+        {
+          "record_id": 349,
+          "dim1": 39.0,
+          "dim2": 47.0,
+          "expected_enc_z": "0x2ac1004f9a17e95...",
+          "actual_enc_z": "0x2ac1004f9a17e95...",
+          "match": true
+        },
+        {
+          "record_id": 574,
+          "dim1": 63.0,
+          "dim2": 49.0,
+          "expected_enc_z": "0x2ae47e43b808dd6...",
+          "actual_enc_z": "0x2ae47e43b808dd6...",
+          "match": true
+        },
+        {
+          "record_id": 119,
+          "dim1": 29.0,
+          "dim2": 83.0,
+          "expected_enc_z": "0x31636985095187f...",
+          "actual_enc_z": "0x31636985095187f...",
+          "match": true
+        },
+        {
+          "record_id": 512,
+          "dim1": 63.0,
+          "dim2": 9.0,
+          "expected_enc_z": "0x341e0d35b29f401...",
+          "actual_enc_z": "0x341e0d35b29f401...",
+          "match": true
+        },
+        {
+          "record_id": 96,
+          "dim1": 95.0,
+          "dim2": 34.0,
+          "expected_enc_z": "0x3a7d728c760c9e0...",
+          "actual_enc_z": "0x3a7d728c760c9e0...",
+          "match": true
+        },
+        {
+          "record_id": 108,
+          "dim1": 29.0,
+          "dim2": 77.0,
+          "expected_enc_z": "0x3a93bad84d02e3c...",
+          "actual_enc_z": "0x3a93bad84d02e3c...",
+          "match": true
+        },
+        {
+          "record_id": 374,
+          "dim1": 52.0,
+          "dim2": 58.0,
+          "expected_enc_z": "0x3ba0aaded37405b...",
+          "actual_enc_z": "0x3ba0aaded37405b...",
+          "match": true
+        },
+        {
+          "record_id": 925,
+          "dim1": 14.0,
+          "dim2": 76.0,
+          "expected_enc_z": "0x3f0e65720c52341...",
+          "actual_enc_z": "0x3f0e65720c52341...",
+          "match": true
+        },
+        {
+          "record_id": 482,
+          "dim1": 15.0,
+          "dim2": 20.0,
+          "expected_enc_z": "0x485d22f07297807...",
+          "actual_enc_z": "0x485d22f07297807...",
+          "match": true
+        },
+        {
+          "record_id": 945,
+          "dim1": 15.0,
+          "dim2": 20.0,
+          "expected_enc_z": "0x485d22f07297807...",
+          "actual_enc_z": "0x485d22f07297807...",
+          "match": true
+        },
+        {
+          "record_id": 866,
+          "dim1": 8.0,
+          "dim2": 3.0,
+          "expected_enc_z": "0x48b14972dabc479...",
+          "actual_enc_z": "0x48b14972dabc479...",
+          "match": true
+        },
+        {
+          "record_id": 13,
+          "dim1": 37.0,
+          "dim2": 83.0,
+          "expected_enc_z": "0x5216846f3f4088d...",
+          "actual_enc_z": "0x5216846f3f4088d...",
+          "match": true
+        },
+        {
+          "record_id": 166,
+          "dim1": 38.0,
+          "dim2": 64.0,
+          "expected_enc_z": "0x554270eb7ba90bb...",
+          "actual_enc_z": "0x554270eb7ba90bb...",
+          "match": true
+        },
+        {
+          "record_id": 127,
+          "dim1": 93.0,
+          "dim2": 69.0,
+          "expected_enc_z": "0x55c0585dada03bd...",
+          "actual_enc_z": "0x55c0585dada03bd...",
+          "match": true
+        },
+        {
+          "record_id": 586,
+          "dim1": 100.0,
+          "dim2": 1.0,
+          "expected_enc_z": "0x571f54013c950b7...",
+          "actual_enc_z": "0x571f54013c950b7...",
+          "match": true
+        },
+        {
+          "record_id": 802,
+          "dim1": 75.0,
+          "dim2": 68.0,
+          "expected_enc_z": "0x5731c495fc78eaa...",
+          "actual_enc_z": "0x5731c495fc78eaa...",
+          "match": true
+        },
+        {
+          "record_id": 436,
+          "dim1": 10.0,
+          "dim2": 27.0,
+          "expected_enc_z": "0x5c7eaf8fb0bf6b8...",
+          "actual_enc_z": "0x5c7eaf8fb0bf6b8...",
+          "match": true
+        },
+        {
+          "record_id": 696,
+          "dim1": 19.0,
+          "dim2": 79.0,
+          "expected_enc_z": "0x5e5c46ad5b655d1...",
+          "actual_enc_z": "0x5e5c46ad5b655d1...",
+          "match": true
+        },
+        {
+          "record_id": 806,
+          "dim1": 51.0,
+          "dim2": 29.0,
+          "expected_enc_z": "0x6b966302ef921ae...",
+          "actual_enc_z": "0x6b966302ef921ae...",
+          "match": true
+        },
+        {
+          "record_id": 158,
+          "dim1": 86.0,
+          "dim2": 50.0,
+          "expected_enc_z": "0x732e935f0085c56...",
+          "actual_enc_z": "0x732e935f0085c56...",
+          "match": true
+        }
+      ]
+    },
+    {
+      "name": "PE Ciphertext Verification",
+      "description": "Re-derive keys, re-encrypt with stored nonce \u2192 compare ciphertext byte-by-byte",
+      "passed": true,
+      "details": [
+        {
+          "record_id": 268,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 461,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 114,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 537,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 932,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 898,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 921,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 37,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 167,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        },
+        {
+          "record_id": 238,
+          "vector_length": 35,
+          "all_components_match": true,
+          "mismatch_at": -1
+        }
+      ]
+    },
+    {
+      "name": "Query Correctness",
+      "description": "PE.Query with 'sensor_0' token: found 159 records, expected 159 from plaintext",
+      "passed": true,
+      "details": [
+        {
+          "pe_matched": 159,
+          "expected": 159
+        }
+      ]
+    },
+    {
+      "name": "Tamper Detection",
+      "description": "Modify ciphertext/nonce/key \u2192 PE must reject",
+      "passed": true,
+      "details": [
+        {
+          "label": "Original Data",
+          "stored_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+          "computed_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+          "match": true,
+          "icon": "\u2705",
+          "status": "VALID"
+        },
+        {
+          "label": "Tampered Ciphertext",
+          "stored_c": "a405af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+          "computed_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+          "match": false,
+          "icon": "\u274c",
+          "status": "REJECTED (byte[0]: 0x5b\u21920xa4)"
+        },
+        {
+          "label": "Tampered Nonce",
+          "stored_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+          "computed_c": "be19584f8d1a05ff31382fdf758807ed63a96e6e5bd29cf6aa6e1cf449bff4f8",
+          "match": false,
+          "icon": "\u274c",
+          "status": "REJECTED (nonce modified)"
+        },
+        {
+          "label": "Wrong Key",
+          "stored_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+          "computed_c": "b41889da39fe304c8534d884c06a383a36c4fe86110b1799096fea98172109a2",
+          "match": false,
+          "icon": "\u274c",
+          "status": "REJECTED (MSK: c346a8d4110f2deb...)"
+        }
+      ]
+    },
+    {
+      "name": "Wrong Key Rejection",
+      "description": "Query with wrong MSK \u2192 0 matches out of 50 records",
+      "passed": true,
+      "details": [
+        {
+          "wrong_matches": 0,
+          "tested": 50
+        }
+      ]
+    },
+    {
+      "name": "MongoDB Data Reality",
+      "description": "Verify encrypted data exists in MongoDB Atlas",
+      "passed": true,
+      "details": [
+        {
+          "raw_spatial_data": 2600,
+          "encrypted_index": 26000,
+          "learned_index_models": 50,
+          "experiment_results": 5
+        }
+      ]
+    }
+  ],
+  "records": [],
+  "tamper_demo": {
+    "record_id": 0,
+    "keywords": [
+      "sensor_15",
+      "sensor_9",
+      "sensor_0"
+    ],
+    "attr_position": 32,
+    "cases": [
+      {
+        "label": "Original Data",
+        "stored_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+        "computed_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+        "match": true,
+        "icon": "\u2705",
+        "status": "VALID"
+      },
+      {
+        "label": "Tampered Ciphertext",
+        "stored_c": "a405af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+        "computed_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+        "match": false,
+        "icon": "\u274c",
+        "status": "REJECTED (byte[0]: 0x5b\u21920xa4)"
+      },
+      {
+        "label": "Tampered Nonce",
+        "stored_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+        "computed_c": "be19584f8d1a05ff31382fdf758807ed63a96e6e5bd29cf6aa6e1cf449bff4f8",
+        "match": false,
+        "icon": "\u274c",
+        "status": "REJECTED (nonce modified)"
+      },
+      {
+        "label": "Wrong Key",
+        "stored_c": "5b05af08f7d30bfc221afc6ce2babc36cdd2f4f87c3516a6cc0d8a475455e38f",
+        "computed_c": "b41889da39fe304c8534d884c06a383a36c4fe86110b1799096fea98172109a2",
+        "match": false,
+        "icon": "\u274c",
+        "status": "REJECTED (MSK: c346a8d4110f2deb...)"
+      }
+    ]
+  },
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

@@ -1,0 +1,64 @@
+══════════════════════════════════════════════════════════════════════
+  HOW THE CONTINUATION SCRIPT WORKS (benchmark_n512_continue.py)
+══════════════════════════════════════════════════════════════════════
+
+YES — the script WILL save everything into the SAME CSV files.
+
+Here's what happens step by step:
+
+─── DIMENSION 1: n512_bench_dim1_vs_N.csv ───────────────────────────
+
+  The script HARDCODES your previous results directly in the code:
+
+  ✅ N=100  — AC-SCRAT, ABSE-Range, IBE-Lattice  (from your run)
+  ✅ N=200  — AC-SCRAT, ABSE-Range, IBE-Lattice  (from your run)
+  ✅ N=500  — AC-SCRAT, ABSE-Range, IBE-Lattice  (from your run)
+  ✅ N=800  — AC-SCRAT, ABSE-Range               (from your run)
+  
+  Then it RUNS the missing parts:
+  🔄 N=800  — IBE-Lattice only  (this was interrupted)
+  🔄 N=1000 — AC-SCRAT, ABSE-Range, IBE-Lattice (all 3)
+
+  After finishing, it combines ALL results (hardcoded + newly run)
+  and saves them into:  n512_bench_dim1_vs_N.csv
+
+  The CSV will have 5 rows: N=100, 200, 500, 800, 1000
+  with all 3 algorithms complete.
+
+─── DIMENSION 2: n512_bench_dim2_vs_range.csv ───────────────────────
+
+  Runs FRESH — all 3 algorithms with N=2000 records.
+  Tests range sizes: 10%, 20%, 30%, 50%, 80%
+  Saves to: n512_bench_dim2_vs_range.csv
+
+─── DIMENSION 3: n512_bench_dim3_vs_keywords.csv ────────────────────
+
+  Runs FRESH — all 3 algorithms with N=2000 records, 20 keywords.
+  Tests keyword counts: 1, 2, 3, 5, 10, 20
+  Saves to: n512_bench_dim3_vs_keywords.csv
+
+══════════════════════════════════════════════════════════════════════
+  OUTPUT FILES (all saved in project/added_paper/)
+══════════════════════════════════════════════════════════════════════
+
+  After the script finishes, you will have these 3 CSV files:
+
+  1. n512_bench_dim1_vs_N.csv         ← Trap/Query/Index vs N records
+  2. n512_bench_dim2_vs_range.csv     ← Trap/Query vs Range size %
+  3. n512_bench_dim3_vs_keywords.csv  ← Trap/Query/Index vs Keywords
+
+  These are COMPLETE — no need to manually combine anything.
+  The script handles merging old + new results automatically.
+
+══════════════════════════════════════════════════════════════════════
+  ESTIMATED TIME
+══════════════════════════════════════════════════════════════════════
+
+  IBE-Lattice with n=512 is VERY slow:
+  - N=800 IBE insert:  ~2.5 million ms (~40 min)
+  - N=1000 IBE insert: ~3+ million ms  (~50 min)
+  - N=2000 IBE insert: ~6+ million ms  (~100 min) for dim 2 & 3
+
+  Total estimated: 4-6 hours
+
+══════════════════════════════════════════════════════════════════════
