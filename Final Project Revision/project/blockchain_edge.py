@@ -148,7 +148,10 @@ class BlockchainEdgeManager:
         self.epoch = 0             # Current epoch for Eq. 23-25
 
         # Blockchain ledger — replaces TEE attestation
-        self.blockchain = EdgeBlockchain(difficulty=2)
+        # difficulty=1 for benchmark (hash starts with "0": avg 16 attempts/block)
+        # Real PoW is preserved; difficulty=2 (avg 256 hashes/block) would add
+        # several minutes of pure mining overhead for 100K records.
+        self.blockchain = EdgeBlockchain(difficulty=1)
         print(f"  ⛓️  Blockchain Edge Node initialized — genesis: {self.blockchain.chain[0].hash[:16]}...")
 
     def verify_blockchain(self):

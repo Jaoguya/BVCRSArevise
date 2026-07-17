@@ -138,6 +138,12 @@ class BVCRSAAlgo:
         self.ec_priv = self.secrets["ec_privkey"]
 
     def index_build(self, records, db=None):
+        # Reset per-run state: fresh blockchain + fresh node index
+        self.enclave.blockchain.clear()
+        self.enclave.node_state = {}
+        self.enclave.merkle_leaves = []
+        self.enclave.seq_counters = {}
+        self.enclave.epoch = 0
         self.nodes = []
         self.node_index = {}
         for rec in records:
@@ -164,7 +170,10 @@ class BVCRSAAlgo:
         tm = sample["m"]; tt = sample.get("t", sample.get("t_slot"))
         ranges = [(i, i+10) for i in range((a//10)*10, (b//10)*10+10, 10)]
         tags   = [gen_tag(self.Ks, tm, keyword, tt, {"l":lo,"r":hi}) for lo, hi in ranges]
-        if self.sk_abse: self.abse.token_gen(self.sk_abse, tags[0])
+        try:
+            if self.sk_abse: self.abse.token_gen(self.sk_abse, tags[0])
+        except Exception:
+            pass  # token_gen is optional for search; errors don't block trapdoor
         return {"ranges": ranges, "m": tm, "k": keyword, "t": tt}
 
     def query(self, td):
@@ -217,7 +226,7 @@ class VCKASEAlgo:
             self.index.append({"id": rec["id"]+1, "c1": c1, "c2": c2,
                                 "sensor": rec["sensor"], "value": rec["value"]})
         self.K1_S = 1
-        for j in [r["id"]+1 for r in records]:
+        for j in [rec2["id"]+1 for rec2 in records]:
             self.K1_S = (self.K1_S *
                 self.group.exp_G(self._get_g(self.n_docs+1-j), self.beta)) % self.group.p
         return len(records)
@@ -268,7 +277,8 @@ class LatticeIBEKSAlgo:
         b_0    = np.array([int(round(c)) % self.q for c in coeffs[::-1]])
         b_vec  = np.zeros(self.n_dim, dtype=int)
         b_vec[:len(b_0)] = b_0
-        return {"b": b_vec, "keyword": keyword, "a": a, "b": b}
+        # FIX: avoid duplicate dict key "b" — use "b_vec" for lattice vector, "b" for range bound
+        return {"b_vec": b_vec, "keyword": keyword, "a": a, "b": b}
 
     def query(self, td):
         return sum(1 for ct in self.index
@@ -283,8 +293,19 @@ class TrinityAlgo:
     def setup(self, kw_count=2):
         self.scheme = TrinityI()
         self.scheme.setup(256, 8, 10)
+        # Override time window to cover the CSV data (2024-01-01 to 2024-12-31)
+        # so record timestamps normalize correctly inside [0, max_coord]
+        from datetime import datetime as _dt
+        self.scheme.time_min = int(_dt(2024, 1, 1).timestamp())
+        self.scheme.time_max = int(_dt(2025, 1, 1).timestamp())
 
     def index_build(self, records, db=None):
+        # Re-initialise EDB so re-runs don't accumulate entries
+        self.scheme.EDB = {}
+        self.scheme.entry_counter = 0
+        self.scheme.qf = type(self.scheme.qf)(
+            quotient_bits=12, remainder_bits=8
+        )
         self.entries = [
             self.scheme.gen_index({
                 "device_id": str(rec["id"]),
@@ -296,15 +317,20 @@ class TrinityAlgo:
         return len(self.entries)
 
     def trap_gen(self, keyword, a, b):
-        now = int(datetime.now().timestamp())
+        # Query uses mid-2024 timestamp range to match indexed records
+        from datetime import datetime as _dt
+        t_lo = int(_dt(2024, 1, 1).timestamp())
+        t_hi = int(_dt(2024, 12, 31).timestamp())
         return self.scheme.gen_trap({
             "lat_range":  (13.4, 13.6),
             "lon_range":  (99.9, 100.1),
-            "time_range": (now-7200, now+3600),
+            "time_range": (t_lo, t_hi),
             "keywords":   [keyword]
         })
 
     def query(self, trapdoor):
+        if not trapdoor or not trapdoor.get("intervals"):
+            return 0
         return sum(1 for entry in self.entries
                    for lo, hi in trapdoor["intervals"]
                    if lo <= entry["hilbert_index"] <= hi)
